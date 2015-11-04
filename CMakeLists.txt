@@ -1,9 +1,11 @@
+cmake_minimum_required(VERSION 2.8)
+
 add_library(nlp-common
     document.h)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-install(TARGETS httpi
+install(TARGETS nlp-common
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib)
 
