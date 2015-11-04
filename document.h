@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vector>
+#include <string>
+#include <boost/bimap.hpp>
 
 typedef unsigned int Label;
 
