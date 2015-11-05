@@ -13,7 +13,9 @@ add_library(nlp-common
     featurizer.h
     featurizer.cpp
     dict.h
-    dict.cpp)
+    dict.cpp
+    bow.h
+    bow.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g3")
 
