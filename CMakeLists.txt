@@ -7,7 +7,9 @@ add_library(nlp-common
     rule.h
     rule.cpp
     rules-matcher.h
-    rules-matcher.cpp)
+    rules-matcher.cpp
+    tokenizer.h
+    tokenizer.cpp)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g3")
 
