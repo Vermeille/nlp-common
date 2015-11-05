@@ -1,5 +1,7 @@
 #include "dict.h"
 
+#include <sstream>
+
 Dictionnary::Dictionnary()
         : max_freq_(0) {
     unk_id_ = GetWordId("_UNK_");
@@ -37,3 +39,25 @@ void NGramMaker::Learn(std::vector<WordFeatures>& sentence) {
     }
 }
 
+std::string Dictionnary::Serialize() const {
+    std::ostringstream out;
+    out << dict_.size() << std::endl;
+    for (auto& w : dict_.left) {
+        out << w.first << " " << w.second << std::endl;
+    }
+    return out.str();
+}
+
+Dictionnary Dictionnary::FromSerialized(std::istream& in) {
+    Dictionnary dict;
+    size_t nb;
+    in >> nb;
+
+    std::string w;
+    size_t id;
+    for (size_t i = 0; i < nb; ++i) {
+        in >> w >> id;
+        dict.dict_.insert(decltype (dict.dict_)::value_type(w, id));
+    }
+    return dict;
+}

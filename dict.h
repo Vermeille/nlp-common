@@ -19,6 +19,8 @@ class Dictionnary {
     size_t GetWordId(const std::string& w);
     size_t GetWordIdOrUnk(const std::string& w);
     size_t size() const { return dict_.size(); }
+    std::string Serialize() const;
+    static Dictionnary FromSerialized(std::istream& in);
     boost::bimap<std::string, size_t>::left_map::iterator begin() { return dict_.left.begin(); }
     boost::bimap<std::string, size_t>::left_map::iterator end() { return dict_.left.end(); }
 };
