@@ -24,9 +24,13 @@ class LabelSet {
     boost::bimap<std::string, Label> labels_;
 };
 
+typedef unsigned int Label;
+
 struct WordFeatures {
     size_t idx;
     std::string str;
+
+    WordFeatures(const std::string& s) : str(s), idx(0) {}
 };
 
 struct TrainingExample {
