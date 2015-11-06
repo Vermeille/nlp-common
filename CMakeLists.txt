@@ -17,7 +17,7 @@ add_library(nlp-common
     bow.h
     bow.cpp)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g3")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g3 -Wall -Wextra")
 
 target_link_libraries(nlp-common LINK_PUBLIC glog)
 

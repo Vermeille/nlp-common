@@ -10,7 +10,7 @@ Dictionnary::Dictionnary()
 size_t Dictionnary::GetWordId(const std::string& w) {
     size_t id = dict_.insert(decltype (dict_)::value_type(w, dict_.size())).first->right;
     if (stats_.size() < id) {
-        stats_.resize(id);
+        stats_.resize(id + 1);
         stats_[id] = 1;
     }
     return id;

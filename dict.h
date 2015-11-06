@@ -23,6 +23,7 @@ class Dictionnary {
     static Dictionnary FromSerialized(std::istream& in);
     boost::bimap<std::string, size_t>::left_map::iterator begin() { return dict_.left.begin(); }
     boost::bimap<std::string, size_t>::left_map::iterator end() { return dict_.left.end(); }
+    std::string WordFromId(size_t id) const { return dict_.right.at(id); }
 };
 
 class NGramMaker {
@@ -30,4 +31,6 @@ class NGramMaker {
   public:
     void Annotate(std::vector<WordFeatures>& sentence);
     void Learn(std::vector<WordFeatures>& sentence);
+    const Dictionnary& dict() const { return dict_; }
+    std::string WordFromId(size_t id) const { return dict_.WordFromId(id); }
 };

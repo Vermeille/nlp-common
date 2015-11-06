@@ -9,7 +9,7 @@ class Rule {
     std::string key_;
     std::vector<std::string> pattern_;
 
-    bool Matches(const TrainingExample& ex, int pidx, int exidx) const;
+    bool Matches(const TrainingExample& ex, size_t pidx, size_t exidx) const;
 
   public:
     Rule(const std::string& str);

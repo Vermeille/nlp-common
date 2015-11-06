@@ -23,7 +23,7 @@ bool Rule::Matches(const TrainingExample& ex) const {
     if (pattern_[0] == "^") {
         return Matches(ex, 1, 0);
     } else {
-        for (int i = 0; i < ex.inputs.size(); ++i) {
+        for (size_t i = 0; i < ex.inputs.size(); ++i) {
             if (Matches(ex, 0, i)) {
                 return true;
             }
@@ -32,7 +32,7 @@ bool Rule::Matches(const TrainingExample& ex) const {
     }
 }
 
-bool Rule::Matches(const TrainingExample& ex, int pidx, int exidx) const {
+bool Rule::Matches(const TrainingExample& ex, size_t pidx, size_t exidx) const {
     if (pattern_.size() <= pidx) {
         // pattern consumed
         return true;
@@ -77,7 +77,7 @@ std::string Rule::AsString() const {
     }
 
     std::string str = pattern_[0];
-    for (int i = 1; i < pattern_.size(); ++i) {
+    for (size_t i = 1; i < pattern_.size(); ++i) {
         str += " " + pattern_[i];
     }
     return str;

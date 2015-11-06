@@ -27,8 +27,8 @@ class LabelSet {
 typedef unsigned int Label;
 
 struct WordFeatures {
-    size_t idx;
     std::string str;
+    size_t idx;
 
     WordFeatures(const std::string& s) : str(s), idx(0) {}
 };
