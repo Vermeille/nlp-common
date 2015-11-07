@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sstream>
 #include <vector>
 #include <string>
 #include <boost/bimap.hpp>
@@ -19,6 +20,32 @@ class LabelSet {
     }
 
     size_t size() const { return labels_.size(); }
+
+    std::string Serialize() const {
+        std::ostringstream out;
+        out << labels_.size() << std::endl;
+
+        for (auto& l : labels_.right) {
+            out << l.first << " " << l.second << std::endl;
+        }
+
+        return out.str();
+    }
+
+    static LabelSet FromSerialized(std::istream& in) {
+        LabelSet ls;
+        size_t nb_labels;
+        std::string label;
+
+        in >> nb_labels;
+        for (size_t i = 0; i < nb_labels; ++i) {
+            Label id;
+            in >> id >> label;
+            ls.labels_.insert(decltype (labels_)::value_type(label, id));
+        }
+
+        return ls;
+    }
 
   private:
     boost::bimap<std::string, Label> labels_;

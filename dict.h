@@ -33,4 +33,10 @@ class NGramMaker {
     void Learn(std::vector<WordFeatures>& sentence);
     const Dictionnary& dict() const { return dict_; }
     std::string WordFromId(size_t id) const { return dict_.WordFromId(id); }
+    std::string Serialize() const { return dict_.Serialize(); }
+    static NGramMaker FromSerialized(std::istream& in) {
+        NGramMaker ngram;
+        ngram.dict_ = Dictionnary::FromSerialized(in);
+        return ngram;
+    }
 };

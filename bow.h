@@ -22,6 +22,8 @@ class BagOfWords {
 
   public:
     BagOfWords(size_t in_sz, size_t out_sz);
+    BagOfWords();
+
     const std::vector<std::vector<double>>& weights() const { return word_weight_; }
     const std::vector<double>& weights(size_t label) const { return word_weight_[label]; }
     double weight(size_t label, size_t w) const { return word_weight_[label][w]; }

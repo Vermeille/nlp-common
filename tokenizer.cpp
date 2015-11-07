@@ -28,6 +28,8 @@ std::vector<WordFeatures> Tokenizer::FR(const std::string& str) {
 
         ++idx;
     }
-    sentence.emplace_back(tok);
+    if (tok != "") {
+        sentence.emplace_back(tok);
+    }
     return sentence;
 }

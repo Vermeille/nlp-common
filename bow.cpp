@@ -10,6 +10,11 @@ BagOfWords::BagOfWords(size_t in_sz, size_t out_sz)
         output_size_(out_sz) {
 }
 
+BagOfWords::BagOfWords()
+        : input_size_(0),
+        output_size_(0) {
+}
+
 void BagOfWords::Init() {
     word_weight_.resize(output_size_);
     for (size_t i = 0; i < output_size_; ++i) {
@@ -114,7 +119,8 @@ std::string BagOfWords::Serialize() const {
 
 BagOfWords BagOfWords::FromSerialized(std::istream& in) {
     std::string tok;
-    size_t in_sz, out_sz;
+    size_t in_sz = 0;
+    size_t out_sz = 0;
     in >> in_sz >> out_sz;
 
     BagOfWords bow(in_sz, out_sz);
