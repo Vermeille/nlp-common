@@ -23,6 +23,8 @@ std::vector<WordFeatures> Tokenizer::FR(const std::string& str) {
             sentence.emplace_back(tok);
             tok.clear();
         } else if (ispunct(str[idx], fr)) {
+            sentence.emplace_back(tok);
+            tok.clear();
             sentence.emplace_back(std::string() + str[idx]);
         }
 
