@@ -16,7 +16,7 @@ std::vector<WordFeatures> Tokenizer::FR(const std::string& str) {
                 sentence.emplace_back(tok);
                 tok.clear();
             }
-        } else if (isalpha(str[idx], fr) || str[idx] == '-') {
+        } else if (isalnum(str[idx], fr) || str[idx] == '-') {
             tok += str[idx];
         } else if (str[idx] == '\'') {
             tok += '\'';
