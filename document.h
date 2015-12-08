@@ -57,6 +57,8 @@ struct WordFeatures {
     std::string str;
     size_t idx;
 
+    size_t pos;
+
     WordFeatures(const std::string& s) : str(s), idx(0) {}
 };
 

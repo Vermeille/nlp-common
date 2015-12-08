@@ -15,11 +15,17 @@ add_library(nlp-common
     dict.h
     dict.cpp
     bow.h
-    bow.cpp)
+    bow.cpp
+    sequence-tagger.cpp
+    sequence-tagger.h
+    )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g3 -Wall -Wextra")
 
 target_link_libraries(nlp-common LINK_PUBLIC glog)
+
+add_executable(tests tests.cpp)
+target_link_libraries(tests LINK_PUBLIC nlp-common glog)
 
 install(TARGETS nlp-common
     LIBRARY DESTINATION lib
