@@ -11,9 +11,11 @@ int main() {
     a.val() << 3, 1;
     Var b(1, 1, VarType::Param);
     b.val() << 6;
+
     for (int i = 1; i < 100; ++i) {
         Var j(1, 1);
         j.val() << 0;
+
         for (int k = 0; k < 10; ++k) {
             Var x(2, 1);
             x.val() << (rand() % 30 - 15) / 15., (rand() % 30 - 15) / 15.;

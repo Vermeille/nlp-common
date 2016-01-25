@@ -18,7 +18,6 @@ class Val {
         std::shared_ptr<Val> dep1_;
         std::shared_ptr<Val> dep2_;
         backprop_t backprop_;
-        bool learnable_;
 
     public:
         Val& dep1() { return *dep1_; }
@@ -41,8 +40,6 @@ class Val {
         Eigen::MatrixXd& derivative() { return da_; }
         Eigen::MatrixXd& val() { return a_; }
 
-        bool IsLearnable() const { return learnable_; }
-        void SetLearnable() { learnable_ = true; }
 };
 
 enum class VarType {
@@ -52,13 +49,19 @@ enum class VarType {
 
 class Var {
     std::shared_ptr<Val> v_;
+    bool learnable_;
+
     public:
         Var(size_t rows, size_t cols, VarType type = VarType::Input) :
                 v_(std::make_shared<Val>(rows, cols)) {
-            if (type == VarType::Param) {
-                v_->SetLearnable();
-            }
+            SetType(type);
         }
+
+        void SetType(VarType ty) {
+            learnable_ = (ty == VarType::Param);
+        }
+
+        bool IsLearnable() const { return learnable_; }
         Eigen::MatrixXd& val() { return v_->val(); }
         const Eigen::MatrixXd& val() const { return v_->val(); }
         Eigen::MatrixXd& derivative() { return v_->derivative(); }

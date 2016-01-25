@@ -13,8 +13,7 @@ Val::Val(size_t rows,
     da_(Eigen::MatrixXd::Zero(rows, cols)),
     dep1_(dep1),
     dep2_(dep2),
-    backprop_(bp),
-    learnable_(false) {
+    backprop_(bp) {
 }
 
 Val::Val(Eigen::MatrixXd a,
@@ -25,8 +24,7 @@ Val::Val(Eigen::MatrixXd a,
     da_(Eigen::MatrixXd::Zero(a.rows(), a.cols())),
     dep1_(dep1),
     dep2_(dep2),
-    backprop_(bp),
-    learnable_(false) {
+    backprop_(bp) {
 }
 
 void Val::Backprop() {
