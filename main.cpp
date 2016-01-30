@@ -5,32 +5,49 @@
 
 #include <ad/ad.h>
 
+std::pair<Eigen::MatrixXd, Eigen::MatrixXd> GenDataset(int nb_examples) {
+    // dataset
+    Eigen::MatrixXd x(2, nb_examples);
+    Eigen::MatrixXd y(1, nb_examples);
+    for (int k = 0; k < nb_examples; ++k) {
+        float x1 = (rand() % 30 - 15) / 15.;
+        float x2 = (rand() % 30 - 15) / 15.;
+        x(0, k) = x1;
+        x(1, k) = x2;
+        y(0, k) =  x1 * 8 + x2 * 3 + 5;
+    }
+    return std::make_pair(x, y);
+}
+
 int main() {
     using namespace ad;
-    Var a(1, 2, VarType::Param);
-    a.val() << 3, 1;
-    Var b(1, 1, VarType::Param);
-    b.val() << 6;
+    const int nb_examples = 1;
 
-    for (int i = 1; i < 100; ++i) {
-        Var j(1, 1);
-        j.val() << 0;
+    auto a_weights = std::make_shared<Eigen::MatrixXd>(1, 2);
+    *a_weights << 3, 4;
+    auto b_weights = std::make_shared<Eigen::MatrixXd>(1, 1);
+    *b_weights << 6;
 
-        for (int k = 0; k < 10; ++k) {
-            Var x(2, 1);
-            x.val() << (rand() % 30 - 15) / 15., (rand() % 30 - 15) / 15.;
-            Var y(1, 1);
-            y.val() << x.val()(0, 0) * 8 + x.val()(1, 0) * 3 + 5;
+    for (int i = 0; i < 100; ++ i) {
+        ComputationGraph g;
+        auto dataset = GenDataset(nb_examples);
 
-            Var h = a * x + b; // model
-            j = MSE(h, y) + j; // hypothesis
-        }
-        std::cout << "COST =\n" << j.val() << "\n";
-        j.Backprop();
-        a.val() -= 0.1 * a.derivative() / 10;
-        b.val() -= 0.1 * b.derivative() / 10;
-        j.ClearGrad();
+        Var x = g.CreateParam(dataset.first);
+        Var y = g.CreateParam(dataset.second);
+        Var a = g.CreateParam(a_weights);
+        Var b = g.CreateParam(b_weights);
+
+        Var h = a * x + b;
+        Var j = MSE(h, y);
+
+        std::cout << "COST = " << j.value() << "\n";
+
+        opt::SGD sgd(0.1 / nb_examples);
+        g.BackpropFrom(j);
+        g.Update(sgd, {&a, &b});
     }
+
+    std::cout << "a = " << *a_weights << " b = " << *b_weights << std::endl;
     return 0;
 }
 

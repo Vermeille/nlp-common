@@ -4,146 +4,138 @@
 
 namespace ad {
 
-static void AddBackprop(Val& v) {
-    v.dep1().derivative() += v.derivative();
-    v.dep2().derivative() += v.derivative();
+static void AddBackprop(Var& val, Var* lhs, Var* rhs) {
+    lhs->derivative() += val.derivative();
+    rhs->derivative() += val.derivative();
 }
 
 Var operator+(const Var& v1, const Var& v2) {
-    return Var(std::make_shared<Val>(v1.val() + v2.val(),
-                AddBackprop,
-                v1.matrix(),
-                v2.matrix()));
+    return v1.graph()->CreateNode(v1.value() + v2.value(), v1, v2, AddBackprop);
 }
 
-static void SubBackprop(Val& v) {
-    v.dep1().derivative() += v.derivative();
-    v.dep2().derivative() -= v.derivative();
+static void SubBackprop(Var& val, Var* lhs, Var* rhs) {
+    lhs->derivative() += val.derivative();
+    rhs->derivative() -= val.derivative();
 }
 
 Var operator-(const Var& v1, const Var& v2) {
-    return Var(std::make_shared<Val>(v1.val() - v2.val(),
-                SubBackprop,
-                v1.matrix(),
-                v2.matrix()));
+    return v1.graph()->CreateNode(v1.value() - v2.value(), v1, v2, SubBackprop);
 }
 
-static void MulBackprop(Val& v) {
-    v.dep1().derivative() +=  v.derivative() * v.dep2().val().transpose();
-    v.dep2().derivative() +=  v.dep1().val().transpose() * v.derivative();
+static void MulBackprop(Var& val, Var* lhs, Var* rhs) {
+    lhs->derivative() +=  val.derivative() * rhs->value().transpose();
+    rhs->derivative() +=  lhs->value().transpose() * val.derivative();
 }
 
 Var operator*(const Var& v1, const Var& v2) {
-    return Var(std::make_shared<Val>(v1.val() * v2.val(),
-                MulBackprop,
-                v1.matrix(),
-                v2.matrix()));
+    return v1.graph()->CreateNode(v1.value() * v2.value(), v1, v2, MulBackprop);
 }
 
-static void ReluBackprop(Val& v) {
-    double* da = v.dep1().derivative().data();
-    double* a = v.dep1().val().data();
-    double* db = v.derivative().data();
-    for (int i = 0; i < v.dep1().derivative().size(); ++i) {
+static void ReluBackprop(Var& val, Var* lhs, Var*) {
+    double* da = lhs->derivative().data();
+    const double* a = lhs->value().data();
+    double* db = val.derivative().data();
+    for (int i = 0; i < lhs->derivative().size(); ++i) {
         da[i] += a[i] > 0 ? db[i] : 0;
     }
 }
 
 Var Relu(const Var& v1) {
-    return Var(std::make_shared<Val>(v1.val().array().max(0),
-                ReluBackprop,
-                v1.matrix()));
+    return v1.graph()->CreateNode(
+            v1.value().array().max(0), v1, no_operand, ReluBackprop);
 }
 
-static void SquareBackprop(Val& v) {
-    v.dep1().derivative() += 2 * v.derivative() * v.dep1().val();
+static void SquareBackprop(Var& val, Var* lhs, Var*) {
+    lhs->derivative() += 2 * val.derivative() * lhs->value();
 }
 
 Var Square(const Var& v1) {
-    return Var(std::make_shared<Val>(v1.val() * v1.val(),
-                SquareBackprop,
-                v1.matrix()));
+    return v1.graph()->CreateNode(
+            v1.value() * v1.value(), v1, no_operand, SquareBackprop);
 }
 
-static void EltwiseMulBackprop(Val& x) {
-    x.dep1().derivative() = x.derivative().cwiseProduct(x.dep2().val());
-    x.dep2().derivative() = x.derivative().cwiseProduct(x.dep1().val());
+static void EltSquareBackprop(Var& val, Var* lhs, Var*) {
+    lhs->derivative() += 2 * val.derivative().cwiseProduct(lhs->value());
 }
 
-Var operator^(const Var& a, const Var& b) {
-    return Var(std::make_shared<Val>(a.val().cwiseProduct(b.val()),
-                EltwiseMulBackprop,
-                a.matrix(),
-                b.matrix()));
+Var EltSquare(const Var& v1) {
+    return v1.graph()->CreateNode(
+            v1.value().cwiseProduct(v1.value()), v1, no_operand, EltSquareBackprop);
 }
 
-static void LogBackprop(Val& x) {
-    double* da = x.dep1().val().data();
-    double* dx = x.derivative().data();
-    double* a = x.dep1().val().data();
+static void EltwiseMulBackprop(Var& val, Var* lhs, Var* rhs) {
+    lhs->derivative() += val.derivative().cwiseProduct(rhs->value());
+    rhs->derivative() += val.derivative().cwiseProduct(lhs->value());
+}
+
+Var operator^(const Var& v1, const Var& v2) {
+    return v1.graph()->CreateNode(
+            v1.value().cwiseProduct(v2.value()), v1, v2, EltwiseMulBackprop);
+}
+
+static void LogBackprop(Var& val, Var* lhs, Var*) {
+    double* da = lhs->derivative().data();
+    double* dx = val.derivative().data();
+    const double* a = lhs->value().data();
     double log10 = log(10);
-    for (int i = 0; i < x.val().size(); ++i) {
-        da[i] = dx[i] * 1 / (a[i] * log10);
+    for (int i = 0; i < val.value().size(); ++i) {
+        da[i] += dx[i] * 1 / (a[i] * log10);
     }
 }
 
 Var Log(const Var& x) {
-    Eigen::MatrixXd res(x.val().rows(), x.val().cols());
+    Eigen::MatrixXd res(x.value().rows(), x.value().cols());
     double* dst_ptr = res.data();
-    const double* src_ptr = x.val().data();
+    const double* src_ptr = x.value().data();
     for (int i = 0; i < res.size(); ++i) {
         dst_ptr[i] = log(src_ptr[i]);
     }
-    return Var(std::make_shared<Val>(res, LogBackprop, x.matrix()));
+    return x.graph()->CreateNode(res, x, no_operand, LogBackprop);
 }
 
 Var NLog(const Var& x) {
-    Eigen::MatrixXd res(x.val().rows(), x.val().cols());
+    Eigen::MatrixXd res(x.value().rows(), x.value().cols());
     double* dst_ptr = res.data();
-    const double* src_ptr = x.val().data();
+    const double* src_ptr = x.value().data();
     for (int i = 0; i < res.size(); ++i) {
         dst_ptr[i] = -log(src_ptr[i]);
     }
-    return Var(std::make_shared<Val>(res, LogBackprop, x.matrix()));
+    return x.graph()->CreateNode(res, x, no_operand, LogBackprop);
 }
 
-Var MSE(const Var& h, const Var& y) {
-    return Square(h - y);
-}
-
-Var CrossEntropy(const Var& h, const Var& y) {
+Var CrossEntropy(const Var& y, const Var& h) {
     return y ^ NLog(h);
 }
 
-static void ExpBackprop(Val& x) {
-    double* da = x.dep1().val().data();
-    double* dx = x.derivative().data();
-    double* a = x.dep1().val().data();
-    for (int i = 0; i < x.val().size(); ++i) {
-        da[i] = dx[i] * exp(a[i]);
+static void ExpBackprop(Var& val, Var* lhs, Var*) {
+    double* da = lhs->derivative().data();
+    const double* dx = val.derivative().data();
+    const double* a = lhs->value().data();
+    for (int i = 0; i < val.value().size(); ++i) {
+        da[i] += dx[i] * exp(a[i]);
     }
 }
 
 Var Exp(const Var& x) {
-    Eigen::MatrixXd res(x.val().rows(), x.val().cols());
+    Eigen::MatrixXd res(x.value().rows(), x.value().cols());
     double* dst_ptr = res.data();
-    const double* src_ptr = x.val().data();
+    const double* src_ptr = x.value().data();
     for (int i = 0; i < res.size(); ++i) {
         dst_ptr[i] = exp(src_ptr[i]);
     }
-    return Var(std::make_shared<Val>(res, ExpBackprop, x.matrix()));
+    return x.graph()->CreateNode(res, x, no_operand, ExpBackprop);
 }
 
-static void SoftmaxBackprop(Val& x) {
-    const Eigen::MatrixXd a = x.dep1().val();
-    x.dep1().derivative() += x.derivative()
+static void SoftmaxBackprop(Var& val, Var* lhs, Var*) {
+    const Eigen::MatrixXd& a = lhs->value();
+    lhs->derivative() += val.derivative()
         .cwiseProduct((a.array() * (1.0 - a.array())).matrix());
 }
 
 Var Softmax(const Var& x) {
-    Eigen::MatrixXd res(x.val().rows(), x.val().cols());
+    Eigen::MatrixXd res(x.value().rows(), x.value().cols());
     double* dst_ptr = res.data();
-    const double* src_ptr = x.val().data();
+    const double* src_ptr = x.value().data();
     double total = 0;
     for (int i = 0; i < res.size(); ++i) {
         dst_ptr[i] = exp(src_ptr[i]);
@@ -153,19 +145,33 @@ Var Softmax(const Var& x) {
     for (int i = 0; i < res.size(); ++i) {
         dst_ptr[i] /= total;
     }
-    return Var(std::make_shared<Val>(res, SoftmaxBackprop, x.matrix()));
+    return x.graph()->CreateNode(res, x, no_operand, SoftmaxBackprop);
 }
 
 Var Sigmoid(const Var& x) {
-    Eigen::MatrixXd res(x.val().rows(), x.val().cols());
+    Eigen::MatrixXd res(x.value().rows(), x.value().cols());
     double* dst_ptr = res.data();
-    const double* src_ptr = x.val().data();
+    const double* src_ptr = x.value().data();
     for (int i = 0; i < res.size(); ++i) {
         dst_ptr[i] = 1.0 / (1 + exp(-src_ptr[i]));
     }
 
     // Sigmoid derivative is the same as Softmax's
-    return Var(std::make_shared<Val>(res, SoftmaxBackprop, x.matrix()));
+    return x.graph()->CreateNode(res, x, no_operand, SoftmaxBackprop);
+}
+
+void ColSumBackprop(Var& val, Var* lhs, Var*) {
+    lhs->derivative().array() += (double)val.derivative()(0, 0);
+}
+
+Var ColSum(const Var& a) {
+    Eigen::MatrixXd res(1, 1);
+    res << a.value().sum();
+    return a.graph()->CreateNode(res, a, no_operand, ColSumBackprop);
+}
+
+Var MSE(const Var& h, const Var& y) {
+    return ColSum(EltSquare(h - y));
 }
 
 }

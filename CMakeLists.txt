@@ -2,10 +2,15 @@ cmake_minimum_required(VERSION 2.8)
 
 project(AD-MAIN CXX)
 
-file(GLOB ad_src "ad/*")
 
 add_library(ad
-    ${ad_src}
+    ad/ad.h
+    ad/graph.h
+    ad/graph.cpp
+    ad/operators.h
+    ad/operators.cpp
+    ad/optimizer.h
+    ad/optimizers/sgd.h
 )
 
 install(FILES ${libad} DESTINATION include/ad)
