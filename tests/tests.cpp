@@ -10,7 +10,7 @@ TrainingExample Parse(const std::string& str) {
     TrainingExample ex;
     input >> w;
     while (input) {
-        ex.inputs.push_back({0, w});
+        //ex.inputs.push_back({0, w});
         input >> w;
     }
     return ex;
