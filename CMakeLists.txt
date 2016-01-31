@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 2.8)
 
 project(NLP-COMMON CXX)
 
+add_subdirectory(autodiff)
+
 add_library(nlp-common
     document.h
     rule.h
