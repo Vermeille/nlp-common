@@ -93,6 +93,15 @@ Var Log(const Var& x) {
     return x.graph()->CreateNode(res, x, no_operand, LogBackprop);
 }
 
+static void NLogBackprop(Var& val, Var* lhs, Var*) {
+    double* da = lhs->derivative().data();
+    double* dx = val.derivative().data();
+    const double* a = lhs->value().data();
+    for (int i = 0, size = val.value().size(); i < size; ++i) {
+        da[i] += -dx[i] / (a[i]);
+    }
+}
+
 Var NLog(const Var& x) {
     Eigen::MatrixXd res(x.value().rows(), x.value().cols());
     double* dst_ptr = res.data();
@@ -100,11 +109,11 @@ Var NLog(const Var& x) {
     for (int i = 0; i < res.size(); ++i) {
         dst_ptr[i] = -log(src_ptr[i]);
     }
-    return x.graph()->CreateNode(res, x, no_operand, LogBackprop);
+    return x.graph()->CreateNode(res, x, no_operand, NLogBackprop);
 }
 
 Var CrossEntropy(const Var& y, const Var& h) {
-    return y ^ NLog(h);
+    return ad::ColSum(y ^ NLog(h));
 }
 
 static void ExpBackprop(Var& val, Var* lhs, Var*) {
