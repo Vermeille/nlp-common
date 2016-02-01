@@ -2,7 +2,7 @@
 #include <string>
 #include <iostream>
 
-#include "rules-matcher.h"
+#include <nlp/rules-matcher.h>
 
 TrainingExample Parse(const std::string& str) {
     std::istringstream input(str);

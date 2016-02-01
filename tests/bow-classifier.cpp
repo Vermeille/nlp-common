@@ -1,9 +1,9 @@
 #include <iostream>
 #include <fstream>
 
-#include <dict.h>
-#include <tokenizer.h>
-#include <bow.h>
+#include <nlp/dict.h>
+#include <nlp/tokenizer.h>
+#include <nlp/bow.h>
 
 Document Parse(const std::string& str, NGramMaker& ngram, LabelSet& ls) {
     std::ifstream dataset(str);
