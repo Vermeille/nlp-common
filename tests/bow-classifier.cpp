@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
     }
 
     NGramMaker ngram;
-    BagOfWords bow(20000, 2);
+    BagOfWords bow(200, 2);
     LabelSet ls;
     Document doc = Parse(argv[1], ngram, ls);
 

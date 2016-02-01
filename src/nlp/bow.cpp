@@ -21,7 +21,7 @@ BagOfWords::BagOfWords(size_t in_sz, size_t out_sz)
     for (size_t i = 0; i < out_sz; ++i) {
         b_mat(i, 0) = randr(-1, 1);
 
-        for (size_t j = 0; j < out_sz; ++j) {
+        for (size_t j = 0; j < in_sz; ++j) {
             w_mat(i, j) = randr(-1, 1);
         }
     }
@@ -82,7 +82,7 @@ int BagOfWords::Train(const Document& doc) {
         // MSE is weirdly doing better than Cross Entropy
         Var J = ad::MSE(y, h);
 
-        ad::opt::SGD sgd(0.01);
+        opt::SGD sgd(0.01);
         g.BackpropFrom(J);
         g.Update(sgd, {&w, &b});
 
@@ -182,5 +182,7 @@ void BagOfWords::ResizeOutput(size_t out) {
     for (unsigned row = output_size_; row < out; ++row) {
         b_mat(row, 0) = randr(-1, 1);
     }
+
+    output_size_ = out;
 }
 
