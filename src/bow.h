@@ -15,8 +15,6 @@ class BagOfWords {
     size_t input_size_;
     size_t output_size_;
 
-    void Init();
-
     ad::Var ComputeModel(
             ad::ComputationGraph& g, ad::Var& w, ad::Var& b,
             const std::vector<WordFeatures>& ws) const;
@@ -28,7 +26,6 @@ class BagOfWords {
     std::string Serialize() const;
     static BagOfWords FromSerialized(std::istream& file);
 
-    double ComputeNLL(double* probas) const;
     Eigen::MatrixXd ComputeClass(const std::vector<WordFeatures>& ws) const;
 
     int Train(const Document& doc);
