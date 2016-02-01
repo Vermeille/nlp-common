@@ -77,9 +77,8 @@ static void LogBackprop(Var& val, Var* lhs, Var*) {
     double* da = lhs->derivative().data();
     double* dx = val.derivative().data();
     const double* a = lhs->value().data();
-    double log10 = log(10);
     for (int i = 0; i < val.value().size(); ++i) {
-        da[i] += dx[i] * 1 / (a[i] * log10);
+        da[i] += dx[i] / a[i];
     }
 }
 
@@ -136,7 +135,7 @@ Var Exp(const Var& x) {
 }
 
 static void SoftmaxBackprop(Var& val, Var* lhs, Var*) {
-    const Eigen::MatrixXd& a = lhs->value();
+    const Eigen::MatrixXd& a = val.value();
     lhs->derivative() += val.derivative()
         .cwiseProduct((a.array() * (1.0 - a.array())).matrix());
 }
