@@ -2,42 +2,19 @@
 
 #include "sequence-tagger.h"
 
-static const unsigned int kNotFound = -1;
-static constexpr double kLearningRate = 0.01;
-
-static double randr(float from, float to) {
-    double distance = to - from;
-    return ((double)rand() / ((double)RAND_MAX + 1) * distance) + from;
-}
-
-SequenceTagger::SequenceTagger(
-            size_t in_sz, size_t out_sz,
-            size_t start_word, size_t start_label,
-            size_t stop_word, size_t stop_label)
+SequenceTagger::SequenceTagger(size_t in_sz, size_t out_sz)
         : woo_(std::make_shared<Eigen::MatrixXd>(out_sz, out_sz)),
         b_(std::make_shared<Eigen::MatrixXd>(out_sz, 1)),
         input_size_(in_sz),
-        output_size_(out_sz),
-        start_word_(start_word),
-        start_label_(start_label),
-        stop_word_(stop_word),
-        stop_label_(stop_label) {
+        output_size_(out_sz) {
 
     wox_.reserve(in_sz);
     for (int i = 0; i < in_sz; i++) {
         wox_.push_back(std::make_shared<Eigen::MatrixXd>(out_sz, 1));
-        Eigen::MatrixXd& wox = *wox_.back();
-        for (size_t j = 0; j < out_sz; ++j) {
-            wox(j, 0) = randr(-1, 1);
-        }
+        ad::utils::RandomInit(*wox_.back(), -1, 1);
     }
 
-    Eigen::MatrixXd& woo = *woo_;
-    for (size_t i = 0; i < out_sz; ++i) {
-        for (size_t j = 0; j < out_sz; ++j) {
-            woo(i, j) = randr(-1, 1);
-        }
-    }
+    ad::utils::RandomInit(*woo_, -1, 1);
 }
 
 SequenceTagger::SequenceTagger()
@@ -57,10 +34,7 @@ void SequenceTagger::Compute(std::vector<WordFeatures>& ws) {
 
     const auto& outs = ComputeModel(g, woxes, woo, b, ws.begin(), ws.end());
     for (size_t i = 0; i < outs.size(); ++i) {
-        Eigen::MatrixXd::Index label, dummy;
-        outs[i].value().maxCoeff(&label, &dummy);
-
-        ws[i].pos = label;
+        ws[i].pos = ad::utils::OneHotVectorDecode(outs[i].value());
     }
 }
 
@@ -107,11 +81,9 @@ int SequenceTagger::Train(const Document& doc) {
             Var woo = g.CreateParam(woo_);
             Var b = g.CreateParam(b_);
 
-            Eigen::MatrixXd yt_mat(output_size_, 1);
-            yt_mat.setZero();
-            if (wf.pos < output_size_ && wf.pos != -1) {
-                yt_mat(wf.pos, 0) = 1;
-            }
+
+            Eigen::MatrixXd yt_mat
+                = ad::utils::OneHotColumnVector(wf.pos, output_size_);
             Var yt = g.CreateParam(yt_mat);
 
             auto outs = ComputeModel(g, woxes, woo, b, begin, end);
@@ -129,8 +101,7 @@ int SequenceTagger::Train(const Document& doc) {
             }
             ++end;
 
-            Eigen::MatrixXd::Index predicted, dummy;
-            outs.back().value().maxCoeff(&predicted, &dummy);
+            Label predicted = ad::utils::OneHotVectorDecode(outs.back().value());
 
             nb_correct += predicted == ex.inputs[i].pos ? 1 : 0;
             ++nb_tokens;
@@ -166,9 +137,7 @@ SequenceTagger SequenceTagger::FromSerialized(std::istream& in) {
         start_word >> start_label >>
         stop_word >> stop_label;
 
-    SequenceTagger bow(in_sz, out_sz,
-            start_word, start_label,
-            stop_word, stop_label);
+    SequenceTagger bow(in_sz, out_sz);
 
 #if 0
     for (size_t i = 0; i < bow.output_size_; ++i) {
@@ -195,10 +164,7 @@ void SequenceTagger::ResizeInput(size_t in) {
     // fill in new rightmost columns
     for (unsigned col = input_size_; col < in; ++col) {
         wox_.push_back(std::make_shared<Eigen::MatrixXd>(output_size_, 1));
-        Eigen::MatrixXd& wox = *wox_.back();
-        for (size_t j = 0; j < output_size_; ++j) {
-            wox(j, 0) = randr(-1, 1);
-        }
+        ad::utils::RandomInit(*wox_.back(), -1, 1);
     }
     input_size_ = in;
 }
@@ -210,34 +176,12 @@ void SequenceTagger::ResizeOutput(size_t out) {
 
     // fill-in new bottom rows
     for (auto& w : wox_) {
-        Eigen::MatrixXd& wox = *w;
-        wox.conservativeResize(out, 1);
-        for (unsigned row = output_size_; row < out; ++row) {
-            wox(row, 0) = randr(-1, 1);
-        }
+        ad::utils::RandomExpandMatrix(*w, out, 1, -1, 1);
     }
 
-    Eigen::MatrixXd& woo = *woo_;;
-    woo.conservativeResize(out, out);
-    // new rows
-    for (unsigned row = output_size_; row < out; ++row) {
-        for (unsigned col = 0; col < output_size_; ++col) {
-            woo(row, col) = randr(-1, 1);
-        }
-    }
+    ad::utils::RandomExpandMatrix(*woo_, out, out, -1, 1);
 
-    // new cols
-    for (unsigned row = 0; row < out; ++row) {
-        for (unsigned col = output_size_; col < out; ++col) {
-            woo(row, col) = randr(-1, 1);
-        }
-    }
-
-    Eigen::MatrixXd& b = *b_;
-    b.conservativeResize(out, 1);
-    for (unsigned row = output_size_; row < out; ++row) {
-        b(row, 0) = randr(-1, 1);
-    }
+    ad::utils::RandomExpandMatrix(*b_, out, 1, -1, 1);
 
 
     output_size_ = out;

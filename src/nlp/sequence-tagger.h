@@ -22,12 +22,6 @@ class SequenceTagger {
     size_t input_size_;
     size_t output_size_;
 
-    size_t start_word_;
-    size_t start_label_;
-
-    size_t stop_word_;
-    size_t stop_label_;
-
     std::vector<ad::Var> ComputeModel(
             ad::ComputationGraph& g,
             std::vector<ad::Var>& woxes, ad::Var woo, ad::Var b,
@@ -35,10 +29,7 @@ class SequenceTagger {
             std::vector<WordFeatures>::const_iterator end) const;
 
   public:
-    SequenceTagger(
-            size_t in_sz, size_t out_sz,
-            size_t start_word, size_t start_label,
-            size_t stop_word, size_t stop_label);
+    SequenceTagger(size_t in_sz, size_t out_sz);
 
     SequenceTagger();
 
