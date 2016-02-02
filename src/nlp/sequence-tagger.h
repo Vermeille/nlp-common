@@ -4,13 +4,20 @@
 #include <string>
 #include <iostream>
 
-#include <boost/bimap.hpp>
+#include <Eigen/Dense>
+
+#include <ad/ad.h>
 
 #include "document.h"
 
 class SequenceTagger {
-    std::vector<std::vector<double>> word_weight_;
-    std::vector<std::vector<double>> state_transition_;
+    // very simple RNN model
+    // z(t) = Wox * x(t) + Woo * h(t - 1) + b
+    // h(t) = ReLu(z(t))
+    // o(t) = Softmax(z(t))
+    std::vector<std::shared_ptr<Eigen::MatrixXd>> wox_; //(ouput_sz, 1)[input]
+    std::shared_ptr<Eigen::MatrixXd> woo_; //(ouput_sz, output_sz)
+    std::shared_ptr<Eigen::MatrixXd> b_; //(out_sz, 1)
 
     size_t input_size_;
     size_t output_size_;
@@ -21,38 +28,23 @@ class SequenceTagger {
     size_t stop_word_;
     size_t stop_label_;
 
-    void Init();
-
-    double WordF(Label target, const WordFeatures& w) const;
-
-    void WordF_Backprop(
-            const WordFeatures& w, Label truth, const double* probabilities);
-
-    double RunAllFeatures(
-            Label k, const WordFeatures& ws, const WordFeatures& prev) const;
-
-    void Backprop(
-            const WordFeatures& ws,
-            const WordFeatures& prev,
-            Label truth,
-            const double* probabilities);
+    std::vector<ad::Var> ComputeModel(
+            ad::ComputationGraph& g,
+            std::vector<ad::Var>& woxes, ad::Var woo, ad::Var b,
+            std::vector<WordFeatures>::const_iterator begin,
+            std::vector<WordFeatures>::const_iterator end) const;
 
   public:
     SequenceTagger(
             size_t in_sz, size_t out_sz,
             size_t start_word, size_t start_label,
             size_t stop_word, size_t stop_label);
-    SequenceTagger();
 
-    const std::vector<std::vector<double>>& weights() const { return word_weight_; }
-    const std::vector<double>& weights(size_t label) const { return word_weight_[label]; }
-    double weight(size_t label, size_t w) const { return word_weight_[label][w]; }
+    SequenceTagger();
 
     std::string Serialize() const;
 
     static SequenceTagger FromSerialized(std::istream& file);
-
-    double ComputeNLL(double* probas) const;
 
     Label ComputeTagForWord(
             const WordFeatures& ws,
