@@ -40,16 +40,11 @@ ad::Var BagOfWords::ComputeModel(
     Eigen::MatrixXd input(input_size_, 1);
     input.setZero();
 
+    ad::Var sum = b;
     for (auto& wf : ws) {
-        // one hot encode each word
-        if (wf.idx < input_size_) {
-            input(wf.idx, 0) = 1;
-        }
+        sum = sum + ad::NthCol(w, wf.idx);
     }
-
-    ad::Var x = g.CreateParam(input);
-
-    return ad::Softmax(w * x + b);
+    return ad::Softmax(sum);
 }
 
 Eigen::MatrixXd BagOfWords::ComputeClass(const std::vector<WordFeatures>& ws) const {
