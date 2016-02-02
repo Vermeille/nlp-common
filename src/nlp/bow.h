@@ -16,7 +16,7 @@ class BagOfWords {
     size_t output_size_;
 
     ad::Var ComputeModel(
-            ad::ComputationGraph& g, ad::Var& w, ad::Var& b,
+            ad::Var& w, ad::Var& b,
             const std::vector<WordFeatures>& ws) const;
 
   public:

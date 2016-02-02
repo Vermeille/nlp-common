@@ -5,26 +5,13 @@
 static const unsigned int kNotFound = -1;
 static const double kLearningRate = 0.001;
 
-static double randr(float from, float to) {
-    double distance = to - from;
-    return ((double)rand() / ((double)RAND_MAX + 1) * distance) + from;
-}
-
 BagOfWords::BagOfWords(size_t in_sz, size_t out_sz)
         : w_weights_(std::make_shared<Eigen::MatrixXd>(out_sz, in_sz)),
         b_weights_(std::make_shared<Eigen::MatrixXd>(out_sz, 1)),
         input_size_(in_sz),
         output_size_(out_sz) {
-    auto& b_mat = *b_weights_;
-    auto& w_mat = *w_weights_;
-
-    for (size_t i = 0; i < out_sz; ++i) {
-        b_mat(i, 0) = randr(-1, 1);
-
-        for (size_t j = 0; j < in_sz; ++j) {
-            w_mat(i, j) = randr(-1, 1);
-        }
-    }
+    ad::utils::RandomInit(*b_weights_, -1, 1);
+    ad::utils::RandomInit(*w_weights_, -1, 1);
 }
 
 BagOfWords::BagOfWords()
@@ -35,11 +22,9 @@ BagOfWords::BagOfWords()
 }
 
 ad::Var BagOfWords::ComputeModel(
-        ad::ComputationGraph& g, ad::Var& w, ad::Var& b,
+        ad::Var& w, ad::Var& b,
         const std::vector<WordFeatures>& ws) const {
-    Eigen::MatrixXd input(input_size_, 1);
-    input.setZero();
-
+    // sum of words + b
     ad::Var sum = b;
     for (auto& wf : ws) {
         sum = sum + ad::NthCol(w, wf.idx);
@@ -52,7 +37,7 @@ Eigen::MatrixXd BagOfWords::ComputeClass(const std::vector<WordFeatures>& ws) co
     ad::Var w = g.CreateParam(w_weights_);
     ad::Var b = g.CreateParam(b_weights_);
 
-    return ComputeModel(g, w, b, ws).value();
+    return ComputeModel(w, b, ws).value();
 }
 
 int BagOfWords::Train(const Document& doc) {
@@ -63,28 +48,23 @@ int BagOfWords::Train(const Document& doc) {
     for (auto& ex : doc.examples) {
         using namespace ad;
 
-        Eigen::MatrixXd y_mat(output_size_, 1);
-        y_mat.setZero();
-        y_mat(ex.output, 0) = 1;
+        Eigen::MatrixXd y_mat
+            = utils::OneHotColumnVector(ex.output, output_size_);
 
         ComputationGraph g;
         Var w = g.CreateParam(w_weights_);
         Var b = g.CreateParam(b_weights_);
         Var y = g.CreateParam(y_mat);
 
-        Var h = ComputeModel(g, w, b, ex.inputs);
+        Var h = ComputeModel(w, b, ex.inputs);
 
-        // MSE is weirdly doing better than Cross Entropy
-        Var J = ad::MSE(y, h) + 0.001 * (Mean(EltSquare(w)) * Mean(EltSquare(b)));
+        Var J = ad::CrossEntropy(y, h);
 
-        opt::SGD sgd(0.01);
+        opt::SGD sgd(0.1);
         g.BackpropFrom(J);
         g.Update(sgd, {&w, &b});
 
-        Eigen::MatrixXd& h_mat = h.value();
-        Eigen::MatrixXd::Index max_row, max_col;
-        h_mat.maxCoeff(&max_row, &max_col);
-        Label predicted = max_row;
+        Label predicted = utils::OneHotVectorDecode(h.value());
         nb_correct += predicted == ex.output ? 1 : 0;
         ++nb_tokens;
 
@@ -147,14 +127,8 @@ void BagOfWords::ResizeInput(size_t in) {
         return;
     }
 
-    Eigen::MatrixXd& w_mat = *w_weights_;
-    w_mat.conservativeResize(output_size_, in);
+    ad::utils::RandomExpandMatrix(*w_weights_, output_size_, in, -1, 1);
 
-    for (int row = 0, nb_rows = w_weights_->rows(); row < nb_rows; ++row) {
-        for (size_t i = input_size_; i < in; ++i) {
-            w_mat(row, i) = randr(-1, 1);
-        }
-    }
     input_size_ = in;
 }
 
@@ -163,20 +137,8 @@ void BagOfWords::ResizeOutput(size_t out) {
         return;
     }
 
-    Eigen::MatrixXd& w_mat = *w_weights_;
-    w_mat.conservativeResize(out, input_size_);
-    Eigen::MatrixXd& b_mat = *b_weights_;
-    b_mat.conservativeResize(out, 1);
-
-    for (unsigned row = output_size_; row < out; ++row) {
-        for (unsigned col = 0, nb_cols = w_weights_->cols(); col < nb_cols; ++col) {
-            w_mat(row, col) = randr(-1, 1);
-        }
-    }
-
-    for (unsigned row = output_size_; row < out; ++row) {
-        b_mat(row, 0) = randr(-1, 1);
-    }
+    ad::utils::RandomExpandMatrix(*w_weights_, out, input_size_, -1, 1);
+    ad::utils::RandomExpandMatrix(*b_weights_, out, 1, -1, 1);
 
     output_size_ = out;
 }
