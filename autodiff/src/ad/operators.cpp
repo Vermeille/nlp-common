@@ -186,7 +186,7 @@ Var Sigmoid(const Var& x) {
     return x.graph()->CreateNode(res, x, no_operand, SoftmaxBackprop);
 }
 
-void SumBackprop(Var& val, Var* lhs, Var*) {
+static void SumBackprop(Var& val, Var* lhs, Var*) {
     lhs->derivative().array() += (double)val.derivative()(0, 0);
 }
 
@@ -196,7 +196,7 @@ Var Sum(const Var& a) {
     return a.graph()->CreateNode(res, a, no_operand, SumBackprop);
 }
 
-void MeanBackprop(Var& val, Var* lhs, Var*) {
+static void MeanBackprop(Var& val, Var* lhs, Var*) {
     lhs->derivative().array() +=
         (double)val.derivative()(0, 0) / val.value().size();
 }
@@ -209,6 +209,17 @@ Var Mean(const Var& a) {
 
 Var MSE(const Var& h, const Var& y) {
     return Sum(EltSquare(h - y));
+}
+
+static void NthColBackprop(Var& val, Var* lhs, Var* rhs) {
+    lhs->derivative().col(rhs->value()(0, 0)) += val.derivative();
+}
+
+Var NthCol(const Var& w, int n) {
+    Eigen::MatrixXd n_mat(1, 1);
+    n_mat << n;
+    Var n_var = w.graph()->CreateParam(n_mat);
+    return w.graph()->CreateNode(w.value().col(n), w, n_var, NthColBackprop);
 }
 
 }
