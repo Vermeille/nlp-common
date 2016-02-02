@@ -6,7 +6,7 @@ add_executable(test-rules rules-tests.cpp)
 target_link_libraries(test-rules PUBLIC nlp-common)
 
 add_executable(bow-classifier bow-classifier.cpp)
-target_link_libraries(bow-classifier PUBLIC nlp-common)
+target_link_libraries(bow-classifier PUBLIC nlp-common readline)
 
 add_executable(pos-tagger pos-tagger.cpp)
-target_link_libraries(pos-tagger PUBLIC nlp-common)
+target_link_libraries(pos-tagger PUBLIC nlp-common readline)

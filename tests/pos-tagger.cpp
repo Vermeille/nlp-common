@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <sstream>
 
 #include <stdio.h>
 #include <readline/readline.h>
@@ -8,19 +9,29 @@
 #include <nlp/dict.h>
 #include <nlp/tokenizer.h>
 #include <nlp/bow.h>
+#include <nlp/sequence-tagger.h>
 
 Document Parse(const std::string& str, NGramMaker& ngram, LabelSet& ls) {
     std::ifstream dataset(str);
+    std::string word;
+    std::string pos;
     std::string line;
     Document doc;
     while (std::getline(dataset, line)) {
-        size_t pipe = line.find('|');
-        std::string data(line, 0, pipe - 1);
-        std::string label(line, pipe + 2, line.size());
+        std::istringstream l(line);
+        std::vector<WordFeatures> toks;
 
-        std::vector<WordFeatures> toks = Tokenizer::FR(data);
+        l >> word;
+        l >> pos;
+        while (l) {
+            toks.emplace_back(word);
+            toks.back().pos = ls.GetLabel(pos);
+            l >> word;
+            l >> pos;
+        }
+
         ngram.Learn(toks);
-        doc.examples.push_back(TrainingExample{toks, ls.GetLabel(label)});
+        doc.examples.push_back(TrainingExample{toks, 0});
     }
     return doc;
 }
@@ -32,16 +43,16 @@ int main(int argc, char** argv) {
     }
 
     NGramMaker ngram;
-    BagOfWords bow(200, 2);
     LabelSet ls;
+    SequenceTagger tagger(200, 2);
     Document doc = Parse(argv[1], ngram, ls);
 
-    bow.ResizeInput(ngram.dict().size());
-    bow.ResizeOutput(ls.size());
+    tagger.ResizeInput(ngram.dict().size());
+    tagger.ResizeOutput(ls.size());
 
     std::cout << "Training...\n";
-    for (int i = 0; i < 10; ++i) {
-        std::cout << bow.Train(doc) << "% accuracy" << std::endl;
+    for (int i = 0; i < 1; ++i) {
+        std::cout << tagger.Train(doc) << "% accuracy" << std::endl;
     }
 
     char* line;
@@ -50,10 +61,10 @@ int main(int argc, char** argv) {
 
         std::vector<WordFeatures> toks = Tokenizer::FR(std::string(line));
         ngram.Annotate(toks);
-        auto prediction = bow.ComputeClass(toks);
+        tagger.Compute(toks);
 
-        for (size_t l = 0; l < ls.size(); ++l) {
-            std::cout << ls.GetString(l) << ": " << prediction(l, 0) << "\n";
+        for (auto& w : toks) {
+            std::cout << w.str << ": " << ls.GetString(w.pos) << "\n";
         }
     }
 
