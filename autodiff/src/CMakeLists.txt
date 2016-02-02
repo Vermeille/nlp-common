@@ -7,8 +7,11 @@ find_package(Eigen3)
 add_library(ad
     ad/graph.cpp
     ad/operators.cpp
+    ad/helpers.cpp
+
     ad/ad.h
     ad/graph.h
+    ad/helpers.h
     ad/operators.h
     ad/optimizer.h
     ad/optimizers/sgd.h
