@@ -55,6 +55,16 @@ void ComputationGraph::ClearGrad() {
     }
 }
 
+void ComputationGraph::ClearIntermediateGradientsFrom(Var x) {
+    int id = x.id();
+    for (int i = id; i >= 0; --i) {
+        Var cur(values_[i].get());
+        if (cur.lhs() != -1) {
+            cur.derivative().setZero();
+        }
+    }
+}
+
 void ComputationGraph::Update(Optimizer& opt, const std::vector<Var*>& params) {
     for (auto& p : params) {
         opt.Update(*p);

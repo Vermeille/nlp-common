@@ -24,5 +24,6 @@ Var Sigmoid(const Var& x);
 Var Sum(const Var& a);
 Var Mean(const Var& a);
 Var MSE(const Var& h, const Var& y);
+Var NthCol(const Var& w, int n);
 
 }
