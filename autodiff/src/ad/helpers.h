@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include <Eigen/Dense>
 
 namespace ad {
@@ -11,6 +13,8 @@ void RandomExpandMatrix(Eigen::MatrixXd& mat, int rows, int cols,
         float from, float to);
 Eigen::MatrixXd OneHotColumnVector(int index, int rows);
 int OneHotVectorDecode(const Eigen::MatrixXd& mat);
+void WriteMatrix(const Eigen::MatrixXd& mat, std::ostream& out);
+Eigen::MatrixXd ReadMatrix(std::istream& out);
 
 } // utils
 } // ad

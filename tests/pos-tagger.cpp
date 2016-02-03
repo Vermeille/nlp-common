@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     tagger.ResizeOutput(ls.size());
 
     std::cout << "Training...\n";
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < 5; ++i) {
         std::cout << tagger.Train(doc) << "% accuracy" << std::endl;
     }
 

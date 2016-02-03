@@ -61,5 +61,33 @@ int OneHotVectorDecode(const Eigen::MatrixXd& mat) {
     }
 }
 
+void WriteMatrix(const Eigen::MatrixXd& mat, std::ostream& out) {
+    uint32_t magic = 'MATX';
+    out.write((char*)&magic, 4);
+
+    int int_buf;
+    int_buf = mat.rows();
+    out.write((char*)&int_buf, sizeof (int));
+    int_buf = mat.cols();
+    out.write((char*)&int_buf, sizeof (int));
+    out.write((char*)mat.data(), sizeof (double) * mat.size());
+}
+
+Eigen::MatrixXd ReadMatrix(std::istream& out) {
+    uint32_t magic;
+    out.read((char*)&magic, 4);
+
+    if (magic != 'MATX') {
+        throw std::invalid_argument("Magix number 'MATX' not present");
+    }
+
+    int rows, cols;
+    out.read((char*)&rows, sizeof (int));
+    out.read((char*)&cols, sizeof (int));
+
+    Eigen::MatrixXd mat(rows, cols);
+    out.read((char*)mat.data(), sizeof (double) * mat.size());
+    return mat;
+}
 } // utils
 } // ad

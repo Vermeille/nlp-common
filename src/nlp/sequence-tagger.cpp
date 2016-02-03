@@ -111,48 +111,33 @@ int SequenceTagger::Train(const Document& doc) {
 }
 
 std::string SequenceTagger::Serialize() const {
-#if 0
     std::ostringstream out;
-    out << input_size_ << " " << output_size_ << " " <<
-        start_word_ << " " << start_label_ << " " <<
-        stop_word_ << " " << stop_label_ << std::endl;
+    out << input_size_ << " " << output_size_ << " " << std::endl;
 
-    for (size_t w = 0; w < input_size_; ++w) {
-        for (size_t i = 0; i < output_size_; ++i) {
-            out << weight(i, w) << " ";
-        }
-        out << std::endl;
+    for (auto& w : wox_) {
+        ad::utils::WriteMatrix(*w, out);;
     }
+
+    ad::utils::WriteMatrix(*woo_, out);
+    ad::utils::WriteMatrix(*b_, out);
     return out.str();
-#endif
-    return "";
 }
 
 SequenceTagger SequenceTagger::FromSerialized(std::istream& in) {
     std::string tok;
     size_t in_sz = 0;
     size_t out_sz = 0;
-    size_t start_word, start_label, stop_word, stop_label;
-    in >> in_sz >> out_sz >>
-        start_word >> start_label >>
-        stop_word >> stop_label;
+    in >> in_sz >> out_sz;
 
     SequenceTagger bow(in_sz, out_sz);
 
-#if 0
-    for (size_t i = 0; i < bow.output_size_; ++i) {
-        bow.word_weight_.emplace_back();
+    for (int i = 0; i < in_sz; ++i) {
+        bow.wox_.push_back(std::make_shared<Eigen::MatrixXd>(
+                    ad::utils::ReadMatrix(in)));
     }
 
-    for (size_t w = 0; w < bow.input_size_; ++w) {
-        for (size_t i = 0; i < bow.output_size_; ++i) {
-            double score;
-            in >> score;
-            bow.word_weight_[i].push_back(score);
-        }
-    }
-#endif
-
+    bow.woo_ = std::make_shared<Eigen::MatrixXd>(ad::utils::ReadMatrix(in));
+    bow.b_ = std::make_shared<Eigen::MatrixXd>(ad::utils::ReadMatrix(in));
     return bow;
 }
 
@@ -161,7 +146,6 @@ void SequenceTagger::ResizeInput(size_t in) {
         return;
     }
 
-    // fill in new rightmost columns
     for (unsigned col = input_size_; col < in; ++col) {
         wox_.push_back(std::make_shared<Eigen::MatrixXd>(output_size_, 1));
         ad::utils::RandomInit(*wox_.back(), -1, 1);
@@ -174,15 +158,12 @@ void SequenceTagger::ResizeOutput(size_t out) {
         return;
     }
 
-    // fill-in new bottom rows
     for (auto& w : wox_) {
         ad::utils::RandomExpandMatrix(*w, out, 1, -1, 1);
     }
 
     ad::utils::RandomExpandMatrix(*woo_, out, out, -1, 1);
-
     ad::utils::RandomExpandMatrix(*b_, out, 1, -1, 1);
-
 
     output_size_ = out;
 }
