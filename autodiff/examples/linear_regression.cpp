@@ -23,10 +23,7 @@ int main() {
     using namespace ad;
     const int nb_examples = 1;
 
-    auto a_weights = std::make_shared<Eigen::MatrixXd>(1, 2);
-    *a_weights << 3, 4;
-    auto b_weights = std::make_shared<Eigen::MatrixXd>(1, 1);
-    *b_weights << 6;
+    nn::FullyConnLayer fc(1, 2);
 
     for (int i = 0; i < 100; ++ i) {
         ComputationGraph g;
@@ -34,20 +31,20 @@ int main() {
 
         Var x = g.CreateParam(dataset.first);
         Var y = g.CreateParam(dataset.second);
-        Var a = g.CreateParam(a_weights);
-        Var b = g.CreateParam(b_weights);
 
-        Var h = a * x + b;
-        Var j = MSE(h, y) + 0.001 * (Mean(EltSquare(a)) + Mean(EltSquare(b)));
+        auto input = nn::InputLayer(x);
+        auto output = fc.Compute(input);
+        Var j = MSE(output.out, y) + 0.001 * nn::L2ForAllParams(output);
 
         std::cout << "COST = " << j.value() << "\n";
 
         opt::SGD sgd(0.1 / nb_examples);
         g.BackpropFrom(j);
-        g.Update(sgd, {&a, &b});
+        g.Update(sgd, *output.params);
     }
 
-    std::cout << "a = " << *a_weights << " b = " << *b_weights << std::endl;
+    std::cout << "w = " << fc.w() << "\nb = " << fc.b() << "\n";
+
     return 0;
 }
 
