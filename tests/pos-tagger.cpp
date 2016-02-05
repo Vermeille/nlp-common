@@ -60,6 +60,9 @@ int main(int argc, char** argv) {
         add_history(line);
 
         std::vector<WordFeatures> toks = Tokenizer::FR(std::string(line));
+        if (toks.empty()) {
+            continue;
+        }
         ngram.Annotate(toks);
         tagger.Compute(toks);
 

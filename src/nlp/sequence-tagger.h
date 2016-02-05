@@ -11,20 +11,16 @@
 #include "document.h"
 
 class SequenceTagger {
-    // very simple RNN model
-    // z(t) = Wox * x(t) + Woo * h(t - 1) + b
-    // h(t) = ReLu(z(t))
-    // o(t) = Softmax(z(t))
     std::vector<std::shared_ptr<Eigen::MatrixXd>> wox_; //(ouput_sz, 1)[input]
-    std::shared_ptr<Eigen::MatrixXd> woo_; //(ouput_sz, output_sz)
-    std::shared_ptr<Eigen::MatrixXd> b_; //(out_sz, 1)
+    ad::nn::RNNLayer1 rnn_;
 
-    size_t input_size_;
+    size_t vocab_size_;
     size_t output_size_;
 
-    std::vector<ad::Var> ComputeModel(
+    ad::nn::NeuralOutput<std::pair<std::vector<ad::Var>, ad::Var>>
+    ComputeModel(
             ad::ComputationGraph& g,
-            std::vector<ad::Var>& woxes, ad::Var woo, ad::Var b,
+            std::vector<ad::Var>& woxes,
             std::vector<WordFeatures>::const_iterator begin,
             std::vector<WordFeatures>::const_iterator end) const;
 
