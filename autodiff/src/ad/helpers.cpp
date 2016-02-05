@@ -78,7 +78,7 @@ Eigen::MatrixXd ReadMatrix(std::istream& out) {
     out.read((char*)&magic, 4);
 
     if (magic != 'MATX') {
-        throw std::invalid_argument("Magix number 'MATX' not present");
+        throw std::invalid_argument("Magic number 'MATX' not present");
     }
 
     int rows, cols;
@@ -87,6 +87,37 @@ Eigen::MatrixXd ReadMatrix(std::istream& out) {
 
     Eigen::MatrixXd mat(rows, cols);
     out.read((char*)mat.data(), sizeof (double) * mat.size());
+    return mat;
+}
+
+void WriteMatrixTxt(const Eigen::MatrixXd& mat, std::ostream& out) {
+    out << "MATX\n";
+
+    out << mat.rows() << " " << mat.cols() << "\n";
+    const double* data = mat.data();
+    for (size_t i = 0; i < mat.size(); ++i) {
+        out << data[i] << " ";
+    }
+    out << "\n";
+}
+
+Eigen::MatrixXd ReadMatrixTxt(std::istream& in) {
+    std::string magic;
+    in >> magic;
+
+    if (magic != "MATX") {
+        throw std::invalid_argument("Magic number 'MATX' not present");
+    }
+
+    int rows, cols;
+    in >> rows >> cols;
+
+    Eigen::MatrixXd mat(rows, cols);
+    double* data = mat.data();
+    for (size_t i = 0; i < mat.size(); ++i) {
+        in >> data[i];
+    }
+
     return mat;
 }
 } // utils

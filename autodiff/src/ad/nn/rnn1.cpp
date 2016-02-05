@@ -1,5 +1,7 @@
 #include "rnn1.h"
 
+#include <stdexcept>
+
 #include "../helpers.h"
 #include "../operators.h"
 
@@ -38,6 +40,29 @@ NeuralOutput<std::pair<std::vector<Var>, Var>> RNNLayer1::Compute(
 
     return in.Forward(
             std::make_pair(out, h), {whx, whh, woh, bh});
+}
+
+void RNNLayer1::Serialize(std::ostream& out) const {
+    out << "RNN1\n";
+    utils::WriteMatrixTxt(*whx_, out);
+    utils::WriteMatrixTxt(*whh_, out);
+    utils::WriteMatrixTxt(*woh_, out);
+    utils::WriteMatrixTxt(*bh_, out);
+}
+
+RNNLayer1 RNNLayer1::FromSerialized(std::istream& in) {
+    std::string magic;
+    in >> magic;
+    if (magic != "RNN1") {
+        throw std::runtime_error("Not a RNN1 layer, but " + magic);
+    }
+
+    RNNLayer1 rnn(0, 0, 0);
+    *rnn.whx_ = utils::ReadMatrixTxt(in);
+    *rnn.whh_ = utils::ReadMatrixTxt(in);
+    *rnn.woh_ = utils::ReadMatrixTxt(in);
+    *rnn.bh_ = utils::ReadMatrixTxt(in);
+    return rnn;
 }
 
 } // nn

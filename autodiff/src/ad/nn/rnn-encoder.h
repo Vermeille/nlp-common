@@ -31,6 +31,9 @@ class RNNEncoderLayer {
         void ResizeInput(int size) {
             utils::RandomExpandMatrix(*whx_, whx_->rows(), size, -1, 1);
         }
+
+        void Serialize(std::ostream& out) const;
+        static RNNEncoderLayer FromSerialized(std::istream& in);
 };
 
 } // nn

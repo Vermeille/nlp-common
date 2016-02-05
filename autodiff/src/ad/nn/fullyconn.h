@@ -17,6 +17,9 @@ class FullyConnLayer {
 
     public:
         FullyConnLayer(int out_sz, int in_sz);
+        FullyConnLayer(
+                std::shared_ptr<Eigen::MatrixXd> w,
+                std::shared_ptr<Eigen::MatrixXd> b);
 
         NeuralOutput<Var> Compute(NeuralOutput<Var> in);
 
@@ -28,8 +31,10 @@ class FullyConnLayer {
 
         void ResizeOutput(int size);
         void ResizeInput(int size);
-};
 
+        void Serialize(std::ostream& out) const;
+        static FullyConnLayer FromSerialized(std::istream& in);
+};
 
 } // nn
 } // ad

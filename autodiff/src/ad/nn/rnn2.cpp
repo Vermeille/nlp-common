@@ -45,5 +45,32 @@ NeuralOutput<std::pair<std::vector<Var>, Var>> RNNLayer2::Compute(
             std::make_pair(out, h), {whx, whh, wox, woh, bo, bh});
 }
 
+void RNNLayer2::Serialize(std::ostream& out) const {
+    out << "RNN2\n";
+    utils::WriteMatrixTxt(*whx_, out);
+    utils::WriteMatrixTxt(*whh_, out);
+    utils::WriteMatrixTxt(*bh_, out);
+    utils::WriteMatrixTxt(*wox_, out);
+    utils::WriteMatrixTxt(*woh_, out);
+    utils::WriteMatrixTxt(*bo_, out);
+}
+
+RNNLayer2 RNNLayer2::FromSerialized(std::istream& in) {
+    std::string magic;
+    in >> magic;
+    if (magic != "RNN2") {
+        throw std::runtime_error("Not a RNN2 layer, but " + magic);
+    }
+
+    RNNLayer2 rnn(0, 0, 0);
+    *rnn.whx_ = utils::ReadMatrixTxt(in);
+    *rnn.whh_ = utils::ReadMatrixTxt(in);
+    *rnn.bh_ = utils::ReadMatrixTxt(in);
+    *rnn.wox_ = utils::ReadMatrixTxt(in);
+    *rnn.woh_ = utils::ReadMatrixTxt(in);
+    *rnn.bo_ = utils::ReadMatrixTxt(in);
+    return rnn;
+}
+
 } // nn
 } // ad

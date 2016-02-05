@@ -41,6 +41,9 @@ class RNNLayer1 {
             utils::RandomExpandMatrix(*whh_, size, size, -1, 1);
             utils::RandomExpandMatrix(*bh_, size, 1, -1, 1);
         }
+
+        void Serialize(std::ostream& out) const;
+        static RNNLayer1 FromSerialized(std::istream& in);
 };
 
 

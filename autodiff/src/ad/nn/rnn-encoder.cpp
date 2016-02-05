@@ -32,5 +32,25 @@ NeuralOutput<Var> RNNEncoderLayer::Compute(NeuralOutput<std::vector<Var>> in) co
     return in.Forward(h, {whx, whh, bh});
 }
 
+void RNNEncoderLayer::Serialize(std::ostream& out) const {
+    out << "RNN-ENCODER\n";
+    utils::WriteMatrixTxt(*whx_, out);
+    utils::WriteMatrixTxt(*whh_, out);
+    utils::WriteMatrixTxt(*bh_, out);
+}
+
+RNNEncoderLayer RNNEncoderLayer::FromSerialized(std::istream& in) {
+    std::string magic;
+    in >> magic;
+    if (magic != "RNN-ENCODER") {
+        throw std::runtime_error("Not a RNN-ENCODER layer, but " + magic);
+    }
+
+    RNNEncoderLayer rnn(0, 0);
+    *rnn.whx_ = utils::ReadMatrixTxt(in);
+    *rnn.whh_ = utils::ReadMatrixTxt(in);
+    *rnn.bh_ = utils::ReadMatrixTxt(in);
+    return rnn;
+}
 } // nn
 } // ad
