@@ -1,5 +1,6 @@
 #pragma once
 
+#include "nn.h"
 #include "graph.h"
 #include "helpers.h"
 #include "operators.h"

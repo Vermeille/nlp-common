@@ -5,11 +5,13 @@ project(libad CXX)
 find_package(Eigen3)
 
 add_library(ad
+    ad/nn.cpp
     ad/graph.cpp
-    ad/operators.cpp
     ad/helpers.cpp
+    ad/operators.cpp
 
     ad/ad.h
+    ad/nn.h
     ad/graph.h
     ad/helpers.h
     ad/operators.h

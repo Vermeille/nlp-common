@@ -65,9 +65,9 @@ void ComputationGraph::ClearIntermediateGradientsFrom(Var x) {
     }
 }
 
-void ComputationGraph::Update(Optimizer& opt, const std::vector<Var*>& params) {
-    for (auto& p : params) {
-        opt.Update(*p);
+void ComputationGraph::Update(Optimizer& opt, const std::vector<Var>& params) {
+    for (auto p : params) {
+        opt.Update(p);
     }
 }
 

@@ -74,7 +74,7 @@ class VarImpl {
 class Var {
     VarImpl* var_;
     public:
-        Var(VarImpl* var) : var_(var) {}
+        explicit Var(VarImpl* var) : var_(var) {}
         ComputationGraph* graph() const { return var_->graph(); }
         const Eigen::MatrixXd& value() const { return var_->value();}
         Eigen::MatrixXd& value() { return var_->value();}
@@ -105,7 +105,7 @@ class ComputationGraph {
     void BackpropFrom(Var& x);
     void ClearGrad();
     void ClearIntermediateGradientsFrom(Var x);
-    void Update(Optimizer& opt, const std::vector<Var*>& params);
+    void Update(Optimizer& opt, const std::vector<Var>& params);
 };
 
 }
