@@ -62,7 +62,7 @@ int BagOfWords::Train(const Document& doc) {
 
         opt::SGD sgd(0.1);
         g.BackpropFrom(J);
-        g.Update(sgd, {&w, &b});
+        g.Update(sgd, {w, b});
 
         Label predicted = utils::OneHotVectorDecode(h.value());
         nb_correct += predicted == ex.output ? 1 : 0;

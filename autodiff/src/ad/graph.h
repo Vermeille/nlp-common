@@ -3,6 +3,7 @@
 #include <list>
 #include <unordered_map>
 #include <memory>
+#include <set>
 
 #include "optimizer.h"
 
@@ -75,6 +76,7 @@ class Var {
     VarImpl* var_;
     public:
         explicit Var(VarImpl* var) : var_(var) {}
+        Var(const Var&) = default;
         ComputationGraph* graph() const { return var_->graph(); }
         const Eigen::MatrixXd& value() const { return var_->value();}
         Eigen::MatrixXd& value() { return var_->value();}
@@ -87,6 +89,8 @@ class Var {
         int id() const { return var_->id(); }
         int lhs() const { return var_->lhs(); }
         int rhs() const { return var_->rhs(); }
+
+        bool operator<(const Var& o) const { return var_ < o.var_; }
 };
 
 extern const Var no_operand;
@@ -105,7 +109,7 @@ class ComputationGraph {
     void BackpropFrom(Var& x);
     void ClearGrad();
     void ClearIntermediateGradientsFrom(Var x);
-    void Update(Optimizer& opt, const std::vector<Var>& params);
+    void Update(Optimizer& opt, const std::set<Var>& params);
 };
 
 }
