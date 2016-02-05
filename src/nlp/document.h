@@ -5,6 +5,8 @@
 #include <string>
 #include <boost/bimap.hpp>
 
+#include "utils.h"
+
 typedef unsigned int Label;
 
 class LabelSet {
@@ -60,6 +62,7 @@ struct WordFeatures {
     size_t pos;
 
     WordFeatures(const std::string& s) : str(s), idx(0) {}
+    WordFeatures(const std::wstring& s) : str(ToNarrowStr(s)), idx(0) {}
 };
 
 struct TrainingExample {

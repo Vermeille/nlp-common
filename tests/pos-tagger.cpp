@@ -36,25 +36,7 @@ Document Parse(const std::string& str, NGramMaker& ngram, LabelSet& ls) {
     return doc;
 }
 
-int main(int argc, char** argv) {
-    if (argc != 2) {
-        std::cerr << "Usage: " << argv[0] << " <dataset>\n";
-        return EXIT_FAILURE;
-    }
-
-    NGramMaker ngram;
-    LabelSet ls;
-    SequenceTagger tagger(200, 2);
-    Document doc = Parse(argv[1], ngram, ls);
-
-    tagger.ResizeInput(ngram.dict().size());
-    tagger.ResizeOutput(ls.size());
-
-    std::cout << "Training...\n";
-    for (int i = 0; i < 5; ++i) {
-        std::cout << tagger.Train(doc) << "% accuracy" << std::endl;
-    }
-
+void InteractiveShell(SequenceTagger& tagger, NGramMaker& ngram, LabelSet& ls) {
     char* line;
     while ((line = readline("> "))) {
         add_history(line);
@@ -67,9 +49,57 @@ int main(int argc, char** argv) {
         tagger.Compute(toks);
 
         for (auto& w : toks) {
-            std::cout << w.str << ": " << ls.GetString(w.pos) << "\n";
+            std::cout << w.str << " is " << ls.GetString(w.pos) << "\n";
         }
     }
+}
 
-    return 0;
+void Train(const std::string& dataset, const std::string& model) {
+    NGramMaker ngram;
+    LabelSet ls;
+    SequenceTagger tagger(200, 2);
+    Document doc = Parse(dataset, ngram, ls);
+
+    tagger.ResizeInput(ngram.dict().size());
+    tagger.ResizeOutput(ls.size());
+
+    std::cout << "Training...\n";
+    for (int i = 0; i < 5; ++i) {
+        std::cout << tagger.Train(doc) << "% accuracy" << std::endl;
+    }
+
+    std::ofstream out(model);
+    out << ngram.Serialize();
+    out << ls.Serialize();
+    out << tagger.Serialize();
+
+    InteractiveShell(tagger, ngram, ls);
+}
+
+void Interactive(const std::string& model) {
+    std::ifstream in(model);
+    std::cout << "Loading model...";
+    std::cout.flush();
+    NGramMaker ngram = NGramMaker::FromSerialized(in);
+    LabelSet ls = LabelSet::FromSerialized(in);
+    SequenceTagger tagger = SequenceTagger::FromSerialized(in);
+    std::cout << "done\n";
+
+    InteractiveShell(tagger, ngram, ls);
+}
+
+int main(int argc, char** argv) {
+    if (!strcmp(argv[1], "--train") && argc == 4) {
+        Train(argv[2], argv[3]);
+        return EXIT_SUCCESS;
+    }
+
+    if (!strcmp(argv[1], "--interactive") && argc == 3) {
+        Interactive(argv[2]);
+        return EXIT_SUCCESS;
+    }
+
+    std::cerr << "Usage: " << argv[0] << " --train <dataset> <model>\n";
+    std::cerr << "Usage: " << argv[0] << " --interactive <model>\n";
+    return EXIT_FAILURE;
 }

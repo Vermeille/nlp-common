@@ -18,6 +18,8 @@ add_library(nlp-common
     nlp/bow.cpp
     nlp/sequence-tagger.cpp
     nlp/sequence-tagger.h
+    nlp/utils.h
+    nlp/utils.cpp
 )
 
 target_link_libraries(nlp-common LINK_PUBLIC glog ad)

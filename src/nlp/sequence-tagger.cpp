@@ -108,7 +108,7 @@ std::string SequenceTagger::Serialize() const {
         << output_size_ << " " << std::endl;
 
     for (auto& w : wox_) {
-        ad::utils::WriteMatrix(*w, out);;
+        ad::utils::WriteMatrixTxt(*w, out);;
     }
 
     rnn_.Serialize(out);
@@ -124,8 +124,8 @@ SequenceTagger SequenceTagger::FromSerialized(std::istream& in) {
     SequenceTagger seq(vocab_sz, out_sz);
 
     for (size_t i = 0; i < vocab_sz; ++i) {
-        seq.wox_.push_back(std::make_shared<Eigen::MatrixXd>(
-                    ad::utils::ReadMatrix(in)));
+        seq.wox_[i] = std::make_shared<Eigen::MatrixXd>(
+                    ad::utils::ReadMatrixTxt(in));
     }
 
     seq.rnn_ = ad::nn::RNNLayer1::FromSerialized(in);
@@ -139,8 +139,9 @@ void SequenceTagger::ResizeInput(size_t in) {
 
     for (unsigned col = vocab_size_; col < in; ++col) {
         wox_.push_back(std::make_shared<Eigen::MatrixXd>(wordvec_size, 1));
+        ad::utils::RandomInit(*wox_.back(), -1, 1);
     }
-    rnn_.ResizeInput(in);
+
     vocab_size_ = in;
 }
 
