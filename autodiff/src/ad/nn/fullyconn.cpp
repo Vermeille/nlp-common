@@ -19,7 +19,7 @@ FullyConnLayer::FullyConnLayer(
     w_(w), b_(b) {
 }
 
-NeuralOutput<Var> FullyConnLayer::Compute(NeuralOutput<Var> in) {
+NeuralOutput<Var> FullyConnLayer::Compute(NeuralOutput<Var> in) const {
     Var w = in.out.graph()->CreateParam(w_);
     Var b = in.out.graph()->CreateParam(b_);
 
