@@ -11,10 +11,9 @@
 #include "document.h"
 
 class SequenceTagger {
-    std::vector<std::shared_ptr<Eigen::MatrixXd>> wox_; //(ouput_sz, 1)[input]
+    ad::nn::Hashtable words_;
     ad::nn::RNNLayer1 rnn_;
 
-    size_t vocab_size_;
     size_t output_size_;
 
     ad::nn::NeuralOutput<std::pair<std::vector<ad::Var>, ad::Var>>

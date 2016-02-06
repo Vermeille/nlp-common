@@ -6,20 +6,14 @@ static const int wordvec_size = 10;
 static const int hidden_size = 30;
 
 SequenceTagger::SequenceTagger(size_t vocab_sz, size_t out_sz)
-        : rnn_(out_sz, wordvec_size, hidden_size),
-        vocab_size_(vocab_sz),
+        : words_(vocab_sz, wordvec_size),
+        rnn_(out_sz, wordvec_size, hidden_size),
         output_size_(out_sz) {
-
-    wox_.reserve(vocab_sz);
-    for (size_t i = 0; i < vocab_sz; i++) {
-        wox_.push_back(std::make_shared<Eigen::MatrixXd>(wordvec_size, 1));
-        ad::utils::RandomInit(*wox_.back(), -1, 1);
-    }
 }
 
 SequenceTagger::SequenceTagger()
-        : rnn_(0, wordvec_size, hidden_size),
-        vocab_size_(0),
+        : words_(0, wordvec_size),
+        rnn_(0, wordvec_size, hidden_size),
         output_size_(0) {
 }
 
@@ -43,7 +37,7 @@ SequenceTagger::ComputeModel(
     using namespace ad;
 
     while (begin != end) {
-        woxes.push_back(g.CreateParam(wox_[begin->idx]));
+        woxes.push_back(words_.MakeVarFor(g, begin->idx));
         ++begin;
     }
     auto in = nn::InputLayer(woxes);
@@ -103,55 +97,25 @@ int SequenceTagger::Train(const Document& doc) {
 
 std::string SequenceTagger::Serialize() const {
     std::ostringstream out;
-    out << vocab_size_ << " "
-        << wordvec_size << " "
-        << output_size_ << " " << std::endl;
-
-    for (auto& w : wox_) {
-        ad::utils::WriteMatrixTxt(*w, out);;
-    }
-
+    out << words_.Serialize();
     rnn_.Serialize(out);
     return out.str();
 }
 
 SequenceTagger SequenceTagger::FromSerialized(std::istream& in) {
-    size_t vocab_sz = 0;
-    size_t wordvec_sz = 0;
-    size_t out_sz = 0;
-    in >> vocab_sz >> wordvec_sz >> out_sz;
+    SequenceTagger seq(0, 0);
 
-    SequenceTagger seq(vocab_sz, out_sz);
-
-    for (size_t i = 0; i < vocab_sz; ++i) {
-        seq.wox_[i] = std::make_shared<Eigen::MatrixXd>(
-                    ad::utils::ReadMatrixTxt(in));
-    }
-
+    seq.words_ = ad::nn::Hashtable::FromSerialized(in);
     seq.rnn_ = ad::nn::RNNLayer1::FromSerialized(in);
     return seq;
 }
 
 void SequenceTagger::ResizeInput(size_t in) {
-    if (in <= vocab_size_) {
-        return;
-    }
-
-    for (unsigned col = vocab_size_; col < in; ++col) {
-        wox_.push_back(std::make_shared<Eigen::MatrixXd>(wordvec_size, 1));
-        ad::utils::RandomInit(*wox_.back(), -1, 1);
-    }
-
-    vocab_size_ = in;
+    words_.ResizeVocab(in);
 }
 
 void SequenceTagger::ResizeOutput(size_t out) {
-    if (out <= output_size_) {
-        return;
-    }
-
     rnn_.ResizeOutput(out);
-
-    output_size_ = out;
+    output_size_ = (out > output_size_) ? out : output_size_;
 }
 

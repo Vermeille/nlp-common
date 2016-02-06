@@ -49,7 +49,7 @@ void InteractiveShell(SequenceTagger& tagger, NGramMaker& ngram, LabelSet& ls) {
         tagger.Compute(toks);
 
         for (auto& w : toks) {
-            std::cout << w.str << " is " << ls.GetString(w.pos) << "\n";
+            std::cout << w.str << ": " << ls.GetString(w.pos) << "\n";
         }
     }
 }
