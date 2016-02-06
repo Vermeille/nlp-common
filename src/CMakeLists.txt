@@ -18,6 +18,8 @@ add_library(nlp-common
     nlp/bow.cpp
     nlp/sequence-tagger.cpp
     nlp/sequence-tagger.h
+    nlp/sequence-classifier.cpp
+    nlp/sequence-classifier.h
     nlp/utils.h
     nlp/utils.cpp
 )
