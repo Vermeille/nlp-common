@@ -10,13 +10,11 @@
 #include "document.h"
 
 class BagOfWords {
-    std::shared_ptr<Eigen::MatrixXd> w_weights_; //(out_sz, in_sz)
-    std::shared_ptr<Eigen::MatrixXd> b_weights_; //(out_sz, 1)
-    size_t input_size_;
+    ad::nn::Hashtable words_;
     size_t output_size_;
 
-    ad::Var ComputeModel(
-            ad::Var& w, ad::Var& b,
+    ad::nn::NeuralOutput<ad::Var> ComputeModel(
+            ad::ComputationGraph& g,
             const std::vector<WordFeatures>& ws) const;
 
   public:
@@ -24,8 +22,6 @@ class BagOfWords {
     BagOfWords();
 
     double weights(size_t label, size_t word) const;
-    Eigen::MatrixXd& weights() const;
-    double apriori(size_t label) const;
 
     std::string Serialize() const;
     static BagOfWords FromSerialized(std::istream& file);
