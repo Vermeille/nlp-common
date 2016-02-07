@@ -16,10 +16,8 @@ class SequenceTagger {
 
     size_t output_size_;
 
-    ad::nn::NeuralOutput<std::pair<std::vector<ad::Var>, ad::Var>>
-    ComputeModel(
+    ad::nn::NeuralOutput<std::vector<ad::Var>> ComputeModel(
             ad::ComputationGraph& g,
-            std::vector<ad::Var>& woxes,
             std::vector<WordFeatures>::const_iterator begin,
             std::vector<WordFeatures>::const_iterator end) const;
 

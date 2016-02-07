@@ -5,7 +5,7 @@
 
 SequenceClassifier::SequenceClassifier(
         size_t out_sz, size_t hidden_size, size_t wordvec_size, size_t vocab_size)
-    : words_(vocab_size, wordvec_size),
+    : words_(wordvec_size, vocab_size),
     encoder_(hidden_size, wordvec_size),
     decoder_(out_sz, hidden_size),
     output_size_(out_sz) {

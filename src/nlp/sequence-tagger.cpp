@@ -6,7 +6,7 @@ static const int wordvec_size = 10;
 static const int hidden_size = 30;
 
 SequenceTagger::SequenceTagger(size_t vocab_sz, size_t out_sz)
-        : words_(vocab_sz, wordvec_size),
+        : words_(wordvec_size, vocab_sz),
         rnn_(out_sz, wordvec_size, hidden_size),
         output_size_(out_sz) {
 }
@@ -18,34 +18,25 @@ SequenceTagger::SequenceTagger()
 }
 
 void SequenceTagger::Compute(std::vector<WordFeatures>& ws) {
-    std::vector<ad::Var> woxes;
-
     ad::ComputationGraph g;
 
-    const auto& outs = ComputeModel(g, woxes, ws.begin(), ws.end());
-    for (size_t i = 0; i < outs.out.first.size(); ++i) {
-        ws[i].pos = ad::utils::OneHotVectorDecode(outs.out.first[i].value());
+    const auto& outs = ComputeModel(g, ws.begin(), ws.end());
+    for (size_t i = 0; i < outs.out.size(); ++i) {
+        ws[i].pos = ad::utils::OneHotVectorDecode(outs.out[i].value());
     }
 }
 
-ad::nn::NeuralOutput<std::pair<std::vector<ad::Var>, ad::Var>>
-SequenceTagger::ComputeModel(
+ad::nn::NeuralOutput<std::vector<ad::Var>> SequenceTagger::ComputeModel(
         ad::ComputationGraph& g,
-        std::vector<ad::Var>& woxes,
         std::vector<WordFeatures>::const_iterator begin,
         std::vector<WordFeatures>::const_iterator end) const {
     using namespace ad;
 
-    while (begin != end) {
-        woxes.push_back(words_.MakeVarFor(g, begin->idx));
-        ++begin;
-    }
-    auto in = nn::InputLayer(woxes);
-    auto out = rnn_.Compute(in);
-    for (size_t i = 0; i < out.out.first.size(); ++i) {
-        out.out.first[i] = Softmax(out.out.first[i]);
-    }
-    return out;
+    std::vector<int> words_idx;
+    std::transform(begin, end, std::back_inserter(words_idx),
+            [](const WordFeatures& wf) { return wf.idx; });
+
+    return nn::Map(Softmax, rnn_.Compute(nn::HashtableQuery(g, words_, words_idx)));
 }
 
 int SequenceTagger::Train(const Document& doc) {
@@ -60,7 +51,6 @@ int SequenceTagger::Train(const Document& doc) {
         auto end = begin + 1;
         for (size_t i = 0; i < ex.inputs.size(); ++i) {
             auto& wf = ex.inputs[i];
-            std::vector<Var> woxes;
 
             ComputationGraph g;
 
@@ -68,9 +58,9 @@ int SequenceTagger::Train(const Document& doc) {
                 = ad::utils::OneHotColumnVector(wf.pos, output_size_);
             Var yt = g.CreateParam(yt_mat);
 
-            auto outs = ComputeModel(g, woxes, begin, end);
+            auto outs = ComputeModel(g, begin, end);
 
-            Var Jt = MSE(outs.out.first.back(), yt);// + 1e-4 * nn::L2ForAllParams(outs);
+            Var Jt = MSE(outs.out.back(), yt);// + 1e-4 * nn::L2ForAllParams(outs);
 
             nll += Jt.value().sum();
 
@@ -78,12 +68,9 @@ int SequenceTagger::Train(const Document& doc) {
 
             opt::SGD sgd(0.01);
             g.Update(sgd, *outs.params);
-            for (auto w : woxes) {
-                g.Update(sgd, {w});
-            }
             ++end;
 
-            Label predicted = ad::utils::OneHotVectorDecode(outs.out.first.back().value());
+            Label predicted = ad::utils::OneHotVectorDecode(outs.out.back().value());
 
             nb_correct += predicted == ex.inputs[i].pos ? 1 : 0;
             ++nb_tokens;
