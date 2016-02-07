@@ -13,6 +13,7 @@ add_library(ad
     ad/nn/rnn1.cpp
     ad/nn/rnn2.cpp
     ad/nn/rnn-encoder.cpp
+    ad/nn/highway-layer.cpp
 
     ad/ad.h
     ad/nn.h
@@ -25,6 +26,7 @@ add_library(ad
     ad/nn/rnn1.h
     ad/nn/rnn2.h
     ad/nn/rnn-encoder.h
+    ad/nn/highway-layer.h
     ad/optimizer.h
     ad/optimizers/sgd.h
 )
