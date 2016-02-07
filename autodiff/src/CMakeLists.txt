@@ -13,6 +13,7 @@ add_library(ad
     ad/nn/fullyconn.cpp
     ad/nn/rnn1.cpp
     ad/nn/rnn2.cpp
+    ad/nn/lstm.cpp
     ad/nn/rnn-encoder.cpp
     ad/nn/highway-layer.cpp
 
@@ -27,6 +28,7 @@ add_library(ad
     ad/nn/neural-output.h
     ad/nn/rnn1.h
     ad/nn/rnn2.h
+    ad/nn/lstm.h
     ad/nn/rnn-encoder.h
     ad/nn/highway-layer.h
     ad/optimizer.h

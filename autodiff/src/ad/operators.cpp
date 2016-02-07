@@ -222,4 +222,28 @@ Var NthCol(const Var& w, int n) {
     return w.graph()->CreateNode(w.value().col(n), w, n_var, NthColBackprop);
 }
 
+static void TanhBackprop(Var& val, Var* lhs, Var*) {
+    double* da = lhs->derivative().data();
+    const double* dx = val.derivative().data();
+    const double* a = lhs->value().data();
+    for (int i = 0; i < val.value().size(); ++i) {
+        double expm2x = exp(-2 * a[i]);
+        double expm2xp1 = 1 + expm2x;
+        da[i] += dx[i] * (4 * expm2x / (expm2xp1 * expm2xp1));
+    }
+}
+
+Var Tanh(const Var& x) {
+    Eigen::MatrixXd res(x.value().rows(), x.value().cols());
+    double* dst_ptr = res.data();
+    const double* src_ptr = x.value().data();
+    for (int i = 0; i < res.size(); ++i) {
+        double expm2x = exp(-2 * src_ptr[i]);
+        dst_ptr[i] = (1 - expm2x) / (1 + expm2x);
+    }
+
+    // Sigmoid derivative is the same as Softmax's
+    return x.graph()->CreateNode(res, x, no_operand, TanhBackprop);
+}
+
 }
