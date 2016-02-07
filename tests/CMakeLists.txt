@@ -10,3 +10,7 @@ target_link_libraries(bow-classifier PUBLIC nlp-common readline)
 
 add_executable(pos-tagger pos-tagger.cpp)
 target_link_libraries(pos-tagger PUBLIC nlp-common readline)
+
+add_executable(seq-classifier seq-classifier.cpp)
+target_link_libraries(seq-classifier PUBLIC nlp-common readline)
+
