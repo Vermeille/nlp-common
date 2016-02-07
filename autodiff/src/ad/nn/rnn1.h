@@ -21,13 +21,15 @@ class RNNLayer1 {
     public:
         RNNLayer1(int out_sz, int in_sz, int hidden_sz);
 
-        NeuralOutput<std::pair<std::vector<Var>, Var>> Compute(
+        NeuralOutput<std::pair<std::vector<Var>, Var>> ComputeWithHidden(
                 NeuralOutput<std::vector<Var>> in) const;
 
-        NeuralOutput<std::pair<std::vector<Var>, Var>> Compute(
-                NeuralOutput<std::pair<std::vector<Var>, Var>> in) const {
-            return Compute(in.Forward(in.out.first, {}));
+        NeuralOutput<std::vector<Var>> Compute(
+                NeuralOutput<std::vector<Var>> in) const {
+            auto res = ComputeWithHidden(in);
+            return res.Forward(res.out.first, {});
         }
+
         void ResizeOutput(int size) {
             utils::RandomExpandMatrix(*woh_, size, woh_->cols(), -1, 1);
         }

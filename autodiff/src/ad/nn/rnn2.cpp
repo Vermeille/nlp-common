@@ -21,8 +21,8 @@ RNNLayer2::RNNLayer2(int out_sz, int in_sz, int hidden_sz) :
     ad::utils::RandomInit(*bh_ , -1, 1);
 }
 
-NeuralOutput<std::pair<std::vector<Var>, Var>> RNNLayer2::Compute(
-        NeuralOutput<std::vector<Var>> in) const {
+NeuralOutput<std::pair<std::vector<Var>, Var>> RNNLayer2::ComputeWithHidden(
+        const NeuralOutput<std::vector<Var>>& in) const {
     ComputationGraph* g = in.out[0].graph();
     Var whx = g->CreateParam(whx_);
     Var whh = g->CreateParam(whh_);
