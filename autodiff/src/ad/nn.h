@@ -8,6 +8,7 @@
 #include "graph.h"
 #include "helpers.h"
 #include "operators.h"
+#include "hashtable.h"
 
 #include "nn/neural-output.h"
 #include "nn/input-layer.h"
@@ -36,24 +37,6 @@ Var L2ForAllParams(NeuralOutput<T> in) {
     return sum;
 }
 
-class Hashtable {
-    private:
-        std::vector<std::shared_ptr<Eigen::MatrixXd>> w_;
-        size_t wordvec_size_;
-        size_t vocab_size_;
-
-    public:
-        Hashtable(size_t vocab_size, size_t wordvec_size);
-
-        std::string Serialize() const;
-        static Hashtable FromSerialized(std::istream& in);
-
-        void ResizeVectors(size_t size);
-        void ResizeVocab(size_t size);
-
-        Var MakeVarFor(ComputationGraph& g, size_t idx) const;
-        std::shared_ptr<Eigen::MatrixXd> Get(size_t idx) const;
-};
 
 } // nn
 } // ad

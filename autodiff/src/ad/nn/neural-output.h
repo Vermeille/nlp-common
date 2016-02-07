@@ -14,7 +14,7 @@ struct NeuralOutput {
     std::shared_ptr<std::set<Var>> params;
 
     template <class U>
-    NeuralOutput<U> Forward(const U& new_out, const std::vector<Var>& new_params) {
+    NeuralOutput<U> Forward(const U& new_out, const std::set<Var>& new_params) const {
         for (Var p : new_params) {
             params->insert(p);
         }

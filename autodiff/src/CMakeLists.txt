@@ -9,6 +9,7 @@ add_library(ad
     ad/graph.cpp
     ad/helpers.cpp
     ad/operators.cpp
+    ad/hashtable.cpp
     ad/nn/fullyconn.cpp
     ad/nn/rnn1.cpp
     ad/nn/rnn2.cpp
@@ -20,6 +21,7 @@ add_library(ad
     ad/graph.h
     ad/helpers.h
     ad/operators.h
+    ad/hashtable.h
     ad/nn/fullyconn.h
     ad/nn/input-layer.h
     ad/nn/neural-output.h
