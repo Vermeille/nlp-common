@@ -13,9 +13,8 @@
 #include "nn/neural-output.h"
 #include "nn/input-layer.h"
 #include "nn/fullyconn.h"
-#include "nn/rnn1.h"
-#include "nn/rnn2.h"
-#include "nn/rnn-encoder.h"
+#include "nn/rnn.h"
+#include "nn/lstm.h"
 
 namespace ad {
 namespace nn {

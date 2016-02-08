@@ -33,8 +33,20 @@ class LSTMLayer {
 
     LSTMLayer(size_t output_size, size_t input_size);
 
-    NeuralOutput<std::vector<Var>> Compute(
+    NeuralOutput<std::pair<std::vector<Var>, Var>> ComputeWithHidden(
             const NeuralOutput<std::vector<Var>>& in) const;
+
+    NeuralOutput<std::vector<Var>> Compute(
+            const NeuralOutput<std::vector<Var>>& in) const {
+        auto res = ComputeWithHidden(in);
+        return res.Forward(res.out.first, {});
+    }
+
+    NeuralOutput<Var> Encode(
+            const NeuralOutput<std::vector<Var>>& in) const {
+        auto res = ComputeWithHidden(in);
+        return res.Forward(res.out.second, {});
+    }
 
     void ResizeInput(size_t in);
     void ResizeOutput(size_t out);

@@ -40,7 +40,7 @@ LSTMLayer::LSTMLayer(size_t output_size, size_t input_size)
 }
 
 
-NeuralOutput<std::vector<Var>> LSTMLayer::Compute(
+NeuralOutput<std::pair<std::vector<Var>, Var>> LSTMLayer::ComputeWithHidden(
         const NeuralOutput<std::vector<Var>>& in) const {
     std::vector<Var> out;
     out.reserve(in.out.size());
@@ -84,7 +84,7 @@ NeuralOutput<std::vector<Var>> LSTMLayer::Compute(
         out.push_back(hidden);
     }
 
-    return in.Forward(out, {
+    return in.Forward(std::make_pair(out, cell_prev), {
             wix, wih, bi,
             wfx, wfh, bf,
             wox, woh, bo,
