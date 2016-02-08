@@ -12,7 +12,8 @@
 
 class SequenceTagger {
     ad::nn::Hashtable words_;
-    ad::nn::RNNLayer1 rnn_;
+    ad::nn::RNNLayer rnn_;
+    ad::nn::FullyConnLayer fc_;
 
     size_t output_size_;
 

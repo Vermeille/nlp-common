@@ -11,7 +11,7 @@
 
 class SequenceClassifier {
     ad::nn::Hashtable words_;
-    ad::nn::RNNEncoderLayer encoder_;
+    ad::nn::RNNLayer encoder_;
     ad::nn::FullyConnLayer decoder_;
 
     size_t input_size_;
@@ -27,8 +27,8 @@ class SequenceClassifier {
         size_t wordvec_size,
         size_t vocab_size);
 
-    //std::string Serialize() const;
-    //static BagOfWords FromSerialized(std::istream& file);
+    std::string Serialize() const;
+    static SequenceClassifier FromSerialized(std::istream& file);
 
     Eigen::MatrixXd ComputeClass(const std::vector<WordFeatures>& ws) const;
 

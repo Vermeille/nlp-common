@@ -21,7 +21,7 @@ ad::nn::NeuralOutput<ad::Var> SequenceClassifier::ComputeModel(
             }
     );
     auto a1 = ad::nn::InputLayer(words);
-    auto a2 = encoder_.Compute(a1);
+    auto a2 = encoder_.Encode(a1);
     auto a3 = decoder_.Compute(a2);
     a3.out = ad::Softmax(a3.out);
     return a3;
@@ -66,5 +66,27 @@ void SequenceClassifier::ResizeInput(size_t in) {
 void SequenceClassifier::ResizeOutput(size_t out) {
     decoder_.ResizeOutput(out);
     output_size_ = out;
+}
+
+std::string SequenceClassifier::Serialize() const {
+    std::ostringstream oss;
+    oss << "SEQUENCE-CLASSIFIER\n";
+    oss << words_.Serialize();
+    encoder_.Serialize(oss);
+    decoder_.Serialize(oss);
+    return oss.str();
+}
+
+SequenceClassifier SequenceClassifier::FromSerialized(std::istream& file) {
+    std::string magic;
+    file >> magic;
+    if (magic != "SEQUENCE-CLASSIFIER") {
+        throw std::runtime_error("Magic is not SEQUENCE-CLASSIFIER");
+    }
+    SequenceClassifier seq(0, 0, 0, 0);
+    seq.words_ = decltype (seq.words_)::FromSerialized(file);
+    seq.encoder_ = decltype (seq.encoder_)::FromSerialized(file);
+    seq.decoder_ = decltype (seq.decoder_)::FromSerialized(file);
+    return seq;
 }
 

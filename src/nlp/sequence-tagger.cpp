@@ -7,13 +7,15 @@ static const int hidden_size = 30;
 
 SequenceTagger::SequenceTagger(size_t vocab_sz, size_t out_sz)
         : words_(wordvec_size, vocab_sz),
-        rnn_(out_sz, wordvec_size, hidden_size),
+        rnn_(hidden_size, wordvec_size),
+        fc_(out_sz, hidden_size),
         output_size_(out_sz) {
 }
 
 SequenceTagger::SequenceTagger()
         : words_(0, wordvec_size),
-        rnn_(0, wordvec_size, hidden_size),
+        rnn_(hidden_size, wordvec_size),
+        fc_(0, hidden_size),
         output_size_(0) {
 }
 
@@ -35,8 +37,9 @@ ad::nn::NeuralOutput<std::vector<ad::Var>> SequenceTagger::ComputeModel(
     std::vector<int> words_idx;
     std::transform(begin, end, std::back_inserter(words_idx),
             [](const WordFeatures& wf) { return wf.idx; });
-
-    return nn::Map(Softmax, rnn_.Compute(nn::HashtableQuery(g, words_, words_idx)));
+    auto a1 = rnn_.Compute(nn::HashtableQuery(g, words_, words_idx));
+    auto a2 = nn::MapLayer(fc_, a1);
+    return nn::Map(Softmax, a2);
 }
 
 int SequenceTagger::Train(const Document& doc) {
@@ -93,7 +96,7 @@ SequenceTagger SequenceTagger::FromSerialized(std::istream& in) {
     SequenceTagger seq(0, 0);
 
     seq.words_ = ad::nn::Hashtable::FromSerialized(in);
-    seq.rnn_ = ad::nn::RNNLayer1::FromSerialized(in);
+    seq.rnn_ = ad::nn::RNNLayer::FromSerialized(in);
     return seq;
 }
 
