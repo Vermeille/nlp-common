@@ -36,6 +36,8 @@ Var L2ForAllParams(NeuralOutput<T> in) {
     return sum;
 }
 
+std::vector<NeuralOutput<Var>> Lift(const NeuralOutput<std::vector<Var>>& in);
+
 NeuralOutput<std::vector<Var>> HashtableQuery(
         ComputationGraph& g,
         const Hashtable& vecs,
@@ -48,6 +50,19 @@ template <class F>
 NeuralOutput<std::vector<Var>> Map(F&& f, const NeuralOutput<std::vector<Var>>& in) {
     std::vector<Var> out;
     std::transform(in.out.begin(), in.out.end(), std::back_inserter(out), f);
+    return in.Forward(out, {});
+}
+
+template <class F>
+NeuralOutput<std::vector<Var>> MapLayer(
+        const F& f,
+        const NeuralOutput<std::vector<Var>>& in) {
+    auto lifted = Lift(in);
+    std::vector<Var> out;
+    out.reserve(lifted.size());
+    for (auto v : lifted) {
+        out.push_back(f(v).out);
+    }
     return in.Forward(out, {});
 }
 

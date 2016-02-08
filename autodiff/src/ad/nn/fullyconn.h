@@ -22,6 +22,9 @@ class FullyConnLayer {
                 std::shared_ptr<Eigen::MatrixXd> b);
 
         NeuralOutput<Var> Compute(NeuralOutput<Var> in) const;
+        NeuralOutput<Var> operator()(const NeuralOutput<Var>& in) const {
+            return Compute(in);
+        }
 
         Eigen::MatrixXd& w() { return *w_; }
         const Eigen::MatrixXd& w() const { return *w_; }

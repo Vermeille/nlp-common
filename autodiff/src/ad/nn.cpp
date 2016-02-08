@@ -48,5 +48,14 @@ NeuralOutput<std::vector<Var>> Sum(
     return ZipWith(xs, ys, [](const Var& a, const Var& b){ return a + b; });
 }
 
+std::vector<NeuralOutput<Var>> Lift(const NeuralOutput<std::vector<Var>>& in) {
+    std::vector<NeuralOutput<Var>> out;
+    out.reserve(in.out.size());
+    for (Var v : in.out) {
+        out.push_back(in.Forward(v, {}));
+    }
+    return out;
+}
+
 } // nn
 } // ad
