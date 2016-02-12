@@ -12,12 +12,12 @@
 
 class SequenceTagger {
     ad::nn::Hashtable words_;
-    ad::nn::RNNLayer rnn_;
-    ad::nn::FullyConnLayer fc_;
+    ad::nn::RNNLayerParams rnn_;
+    ad::nn::FullyConnParams fc_;
 
     size_t output_size_;
 
-    ad::nn::NeuralOutput<std::vector<ad::Var>> ComputeModel(
+    std::vector<ad::Var> ComputeModel(
             ad::ComputationGraph& g,
             std::vector<WordFeatures>::const_iterator begin,
             std::vector<WordFeatures>::const_iterator end) const;

@@ -23,23 +23,27 @@ void SequenceTagger::Compute(std::vector<WordFeatures>& ws) {
     ad::ComputationGraph g;
 
     const auto& outs = ComputeModel(g, ws.begin(), ws.end());
-    for (size_t i = 0; i < outs.out.size(); ++i) {
-        ws[i].pos = ad::utils::OneHotVectorDecode(outs.out[i].value());
+    for (size_t i = 0; i < outs.size(); ++i) {
+        ws[i].pos = ad::utils::OneHotVectorDecode(outs[i].value());
     }
 }
 
-ad::nn::NeuralOutput<std::vector<ad::Var>> SequenceTagger::ComputeModel(
+std::vector<ad::Var> SequenceTagger::ComputeModel(
         ad::ComputationGraph& g,
         std::vector<WordFeatures>::const_iterator begin,
         std::vector<WordFeatures>::const_iterator end) const {
     using namespace ad;
 
-    std::vector<int> words_idx;
-    std::transform(begin, end, std::back_inserter(words_idx),
-            [](const WordFeatures& wf) { return wf.idx; });
-    auto a1 = rnn_.Compute(nn::HashtableQuery(g, words_, words_idx));
-    auto a2 = nn::MapLayer(fc_, a1);
-    return nn::Map(Softmax, a2);
+    nn::RNNLayer rnn(g, rnn_);
+    nn::FullyConnLayer fc(g, fc_);
+
+    std::vector<Var> out;
+    for (; begin != end; ++begin) {
+        Var tag =
+            Softmax(fc.Compute(rnn.Step(words_.MakeVarFor(g, begin->idx))));
+        out.push_back(tag);
+    }
+    return out;
 }
 
 int SequenceTagger::Train(const Document& doc) {
@@ -63,24 +67,22 @@ int SequenceTagger::Train(const Document& doc) {
 
             auto outs = ComputeModel(g, begin, end);
 
-            Var Jt = MSE(outs.out.back(), yt);// + 1e-4 * nn::L2ForAllParams(outs);
+            Var Jt = MSE(outs.back(), yt);// + 1e-4 * nn::L2ForAllParams(outs);
 
             nll += Jt.value().sum();
 
-            g.BackpropFrom(Jt);
+            g.BackpropFrom(Jt, 5);
 
             opt::SGD sgd(0.01);
-            g.Update(sgd, *outs.params);
+            g.Update(sgd);
             ++end;
 
-            Label predicted = ad::utils::OneHotVectorDecode(outs.out.back().value());
+            Label predicted = ad::utils::OneHotVectorDecode(outs.back().value());
 
             nb_correct += predicted == ex.inputs[i].pos ? 1 : 0;
             ++nb_tokens;
         }
         ++cur;
-        std::cerr << cur << "      " << nll << "               \r";
-        //std::cerr.flush();
     }
     return  nb_correct * 100 / nb_tokens;
 }
@@ -89,6 +91,7 @@ std::string SequenceTagger::Serialize() const {
     std::ostringstream out;
     out << words_.Serialize();
     rnn_.Serialize(out);
+    fc_.Serialize(out);
     return out.str();
 }
 
@@ -96,7 +99,8 @@ SequenceTagger SequenceTagger::FromSerialized(std::istream& in) {
     SequenceTagger seq(0, 0);
 
     seq.words_ = ad::nn::Hashtable::FromSerialized(in);
-    seq.rnn_ = ad::nn::RNNLayer::FromSerialized(in);
+    seq.rnn_ = ad::nn::RNNLayerParams::FromSerialized(in);
+    seq.fc_ = ad::nn::FullyConnParams::FromSerialized(in);
     return seq;
 }
 
