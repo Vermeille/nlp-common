@@ -5,38 +5,41 @@
 #include <Eigen/Dense>
 
 #include "../graph.h"
-#include "neural-output.h"
 
 namespace ad {
 namespace nn {
 
+struct FullyConnParams {
+    std::shared_ptr<Eigen::MatrixXd> w_;
+    std::shared_ptr<Eigen::MatrixXd> b_;
+
+    FullyConnParams(int out_sz, int in_sz, double init = 1);
+
+    void ResizeOutput(int size, double init = 1);
+    void ResizeInput(int size, double init = 1);
+
+    void Serialize(std::ostream& out) const;
+    static FullyConnParams FromSerialized(std::istream& in);
+
+    Eigen::MatrixXd& w() { return *w_; }
+    const Eigen::MatrixXd& w() const { return *w_; }
+
+    Eigen::MatrixXd& b() { return *b_; }
+    const Eigen::MatrixXd& b() const { return *b_; }
+};
+
 class FullyConnLayer {
     private:
-        std::shared_ptr<Eigen::MatrixXd> w_;
-        std::shared_ptr<Eigen::MatrixXd> b_;
+        Var w_;
+        Var b_;
 
     public:
-        FullyConnLayer(int out_sz, int in_sz);
         FullyConnLayer(
-                std::shared_ptr<Eigen::MatrixXd> w,
-                std::shared_ptr<Eigen::MatrixXd> b);
+                ComputationGraph& g,
+                const FullyConnParams& params,
+                bool learnable = true);
 
-        NeuralOutput<Var> Compute(NeuralOutput<Var> in) const;
-        NeuralOutput<Var> operator()(const NeuralOutput<Var>& in) const {
-            return Compute(in);
-        }
-
-        Eigen::MatrixXd& w() { return *w_; }
-        const Eigen::MatrixXd& w() const { return *w_; }
-
-        Eigen::MatrixXd& b() { return *b_; }
-        const Eigen::MatrixXd& b() const { return *b_; }
-
-        void ResizeOutput(int size);
-        void ResizeInput(int size);
-
-        void Serialize(std::ostream& out) const;
-        static FullyConnLayer FromSerialized(std::istream& in);
+        Var Compute(Var in) const;
 };
 
 } // nn

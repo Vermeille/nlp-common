@@ -27,7 +27,8 @@ class Hashtable {
         void ResizeVectors(size_t size);
         void ResizeVocab(size_t size);
 
-        Var MakeVarFor(ComputationGraph& g, size_t idx) const;
+        Var MakeVarFor(
+                ComputationGraph& g, size_t idx, bool learnable = true) const;
         std::shared_ptr<Eigen::MatrixXd> Get(size_t idx) const;
 };
 

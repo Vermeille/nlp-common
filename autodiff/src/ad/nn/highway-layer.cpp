@@ -6,32 +6,30 @@
 namespace ad {
 namespace nn {
 
-HighwayLayer::HighwayLayer(size_t out, size_t in)
-     : w_(std::make_shared<Eigen::MatrixXd>(out, in)),
-     wt_(std::make_shared<Eigen::MatrixXd>(out, in)),
-     wc_(std::make_shared<Eigen::MatrixXd>(out, in)) {
+HighwayLayerParams::HighwayLayerParams(size_t sz, double init)
+        : w_(std::make_shared<Eigen::MatrixXd>(sz, sz)),
+        wt_(std::make_shared<Eigen::MatrixXd>(sz, sz)),
+        wc_(std::make_shared<Eigen::MatrixXd>(sz, sz)) {
+    ad::utils::RandomInit(*w_ , -init, init);
+    ad::utils::RandomInit(*wt_ , -init, init);
+    ad::utils::RandomInit(*wc_ , -init, init);
 }
 
-NeuralOutput<Var> HighwayLayer::Compute(NeuralOutput<Var> in) const {
-    ComputationGraph* g = in.out.graph();
-    Var w = g->CreateParam(w_);
-    Var wt = g->CreateParam(wt_);
-    Var wc = g->CreateParam(wc_);
-    return in.Forward(
-            (Relu(w * in.out) ^ Sigmoid(wt * in.out))
-            + (in.out ^ Sigmoid(wc * in.out)), {w, wt, wc});
+void HighwayLayerParams::Resize(size_t sz, double init) {
+    utils::RandomExpandMatrix(*w_, sz, sz, -init, init);
+    utils::RandomExpandMatrix(*wt_, sz, sz, -init, init);
+    utils::RandomExpandMatrix(*wc_, sz, sz, -init, init);
 }
 
-void HighwayLayer::ResizeInput(size_t in) {
-    utils::RandomExpandMatrix(*w_, w_->rows(), in, -1, 1);
-    utils::RandomExpandMatrix(*wt_, w_->rows(), in, -1, 1);
-    utils::RandomExpandMatrix(*wc_, w_->rows(), in, -1, 1);
+HighwayLayer::HighwayLayer(
+        ComputationGraph& g, const HighwayLayerParams& params, bool learnable)
+        : w_(g.CreateParam(params.w_, learnable)),
+        wt_(g.CreateParam(params.wt_, learnable)),
+        wc_(g.CreateParam(params.wc_, learnable)) {
 }
 
-void HighwayLayer::ResizeOutput(size_t in) {
-    utils::RandomExpandMatrix(*w_, in, w_->cols(), -1, 1);
-    utils::RandomExpandMatrix(*wt_, in, w_->cols(), -1, 1);
-    utils::RandomExpandMatrix(*wc_, in, w_->cols(), -1, 1);
+Var HighwayLayer::Step(Var x) const {
+    return (Relu(w_ * x) ^ Sigmoid(wt_ * x)) + (x ^ Sigmoid(wc_ * x));
 }
 
 } // nn

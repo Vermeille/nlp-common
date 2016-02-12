@@ -6,42 +6,39 @@
 namespace ad {
 namespace nn {
 
-FullyConnLayer::FullyConnLayer(int out_sz, int in_sz) :
+FullyConnParams::FullyConnParams(int out_sz, int in_sz, double init) :
     w_(std::make_shared<Eigen::MatrixXd>(out_sz, in_sz)),
     b_(std::make_shared<Eigen::MatrixXd>(out_sz, 1)) {
-        ad::utils::RandomInit(*w_ , -1, 1);
-        ad::utils::RandomInit(*b_ , -1, 1);
+        ad::utils::RandomInit(*w_ , -init, init);
+        ad::utils::RandomInit(*b_ , -init, init);
 }
 
 FullyConnLayer::FullyConnLayer(
-        std::shared_ptr<Eigen::MatrixXd> w,
-        std::shared_ptr<Eigen::MatrixXd> b) :
-    w_(w), b_(b) {
+        ComputationGraph& g, const FullyConnParams& params, bool learnable) :
+    w_(g.CreateParam(params.w_, learnable)),
+    b_(g.CreateParam(params.b_, learnable)) {
 }
 
-NeuralOutput<Var> FullyConnLayer::Compute(NeuralOutput<Var> in) const {
-    Var w = in.out.graph()->CreateParam(w_);
-    Var b = in.out.graph()->CreateParam(b_);
-
-    return in.Forward(w * in.out + b, {w, b});
+Var FullyConnLayer::Compute(Var x) const {
+    return w_ * x + b_;
 }
 
-void FullyConnLayer::ResizeOutput(int size) {
-    utils::RandomExpandMatrix(*w_, size, w_->cols(), -1, 1);
-    utils::RandomExpandMatrix(*b_, size, 1, -1, 1);
+void FullyConnParams::ResizeOutput(int size, double init) {
+    utils::RandomExpandMatrix(*w_, size, w_->cols(), -init, init);
+    utils::RandomExpandMatrix(*b_, size, 1, -init, init);
 }
 
-void FullyConnLayer::ResizeInput(int size) {
-    utils::RandomExpandMatrix(*w_, w_->rows(), size, -1, 1);
+void FullyConnParams::ResizeInput(int size, double init) {
+    utils::RandomExpandMatrix(*w_, w_->rows(), size, -init, init);
 }
 
-void FullyConnLayer::Serialize(std::ostream& out) const {
+void FullyConnParams::Serialize(std::ostream& out) const {
     out << "FULLY-CONN\n";
     utils::WriteMatrixTxt(*w_, out);
     utils::WriteMatrixTxt(*b_, out);
 }
 
-FullyConnLayer FullyConnLayer::FromSerialized(std::istream& in) {
+FullyConnParams FullyConnParams::FromSerialized(std::istream& in) {
     std::string magic;
     in >> magic;
 
@@ -50,10 +47,10 @@ FullyConnLayer FullyConnLayer::FromSerialized(std::istream& in) {
                 + magic + "' found instead");
     }
 
-    return FullyConnLayer(
-            std::make_shared<Eigen::MatrixXd>(utils::ReadMatrixTxt(in)),
-            std::make_shared<Eigen::MatrixXd>(utils::ReadMatrixTxt(in))
-    );
+    FullyConnParams fc(0, 0);
+    fc.w_ = std::make_shared<Eigen::MatrixXd>(utils::ReadMatrixTxt(in));
+    fc.b_ = std::make_shared<Eigen::MatrixXd>(utils::ReadMatrixTxt(in));
+    return fc;
 }
 
 

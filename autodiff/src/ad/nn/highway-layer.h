@@ -7,24 +7,31 @@
 #include <Eigen/Dense>
 
 #include "../graph.h"
-#include "neural-output.h"
 
 namespace ad {
 namespace nn {
 
+struct HighwayLayerParams {
+    std::shared_ptr<Eigen::MatrixXd> w_;
+    std::shared_ptr<Eigen::MatrixXd> wt_;
+    std::shared_ptr<Eigen::MatrixXd> wc_;
+
+    HighwayLayerParams(size_t sz, double init = 1);
+    void Resize(size_t in, double init = 1);
+};
+
 class HighwayLayer {
     private:
-        std::shared_ptr<Eigen::MatrixXd> w_;
-        std::shared_ptr<Eigen::MatrixXd> wt_;
-        std::shared_ptr<Eigen::MatrixXd> wc_;
+        Var w_;
+        Var wt_;
+        Var wc_;
 
     public:
-        HighwayLayer(size_t out, size_t in);
-
-        NeuralOutput<Var> Compute(NeuralOutput<Var> in) const;
-
-        void ResizeInput(size_t in);
-        void ResizeOutput(size_t in);
+        HighwayLayer(
+                ComputationGraph& g,
+                const HighwayLayerParams& params,
+                bool learnable = true);
+        Var Step(Var x) const;
 };
 
 } // nn

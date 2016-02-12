@@ -62,8 +62,8 @@ void Hashtable::ResizeVocab(size_t size) {
     vocab_size_ = size;
 }
 
-Var Hashtable::MakeVarFor(ComputationGraph& g, size_t idx) const {
-    return g.CreateParam(w_[idx]);
+Var Hashtable::MakeVarFor(ComputationGraph& g, size_t idx, bool learnable) const {
+    return g.CreateParam(w_[idx], learnable);
 }
 
 std::shared_ptr<Eigen::MatrixXd> Hashtable::Get(size_t idx) const {

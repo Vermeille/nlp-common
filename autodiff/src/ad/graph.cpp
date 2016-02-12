@@ -3,14 +3,15 @@
 namespace ad {
 
 const Var no_operand(
-        new VarImpl(nullptr, Eigen::MatrixXd(1,1), -1, -1, -1, DoNothingBackprop));
+        new VarImpl(nullptr, Eigen::MatrixXd(1,1), -1, -1, -1, DoNothingBackprop, false));
 void DoNothingBackprop(Var&, Var*, Var*) {}
 
-Var ComputationGraph::CreateParam(std::shared_ptr<Eigen::MatrixXd> val) {
+Var ComputationGraph::CreateParam(
+        std::shared_ptr<Eigen::MatrixXd> val, bool learnable) {
     int p_id = values_.size();
 
     values_.emplace_back(
-            new VarImpl(this, val, p_id, -1, -1, DoNothingBackprop));
+            new VarImpl(this, val, p_id, -1, -1, DoNothingBackprop, learnable));
     return Var(values_.back().get());
 }
 
@@ -26,7 +27,7 @@ Var ComputationGraph::CreateNode(
     int p_id = values_.size();
 
     values_.emplace_back(
-            new VarImpl(this, val, p_id, lhs.id(), rhs.id(), *bwd));
+            new VarImpl(this, val, p_id, lhs.id(), rhs.id(), *bwd, false));
     return Var(values_.back().get());
 }
 
@@ -76,9 +77,12 @@ void ComputationGraph::ClearIntermediateGradientsFrom(Var x) {
     }
 }
 
-void ComputationGraph::Update(Optimizer& opt, const std::set<Var>& params) {
-    for (auto p : params) {
-        opt.Update(p);
+void ComputationGraph::Update(Optimizer& opt) {
+    for (auto& vptr : values_) {
+        Var v(vptr.get());
+        if (v.IsLearnable()) {
+            opt.Update(v);
+        }
     }
 }
 

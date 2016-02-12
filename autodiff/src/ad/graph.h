@@ -29,6 +29,7 @@ class VarImpl {
         backward_t backward_;
 
         ComputationGraph* const graph_;
+        bool learnable_;
 
     public:
         VarImpl(ComputationGraph* g,
@@ -36,9 +37,11 @@ class VarImpl {
                 int my_id,
                 int op1,
                 int op2,
-                const backward_t& bckwd)
+                const backward_t& bckwd,
+                bool learnable)
             : value_(val), derivative_(val->rows(), val->cols()), lhs_(op1),
-            rhs_(op2), id_(my_id), backward_(bckwd), graph_(g) {
+            rhs_(op2), id_(my_id), backward_(bckwd), graph_(g),
+            learnable_(learnable) {
             derivative_.setZero();
         }
 
@@ -47,10 +50,12 @@ class VarImpl {
                 int my_id,
                 int op1,
                 int op2,
-                const backward_t& bckwd)
+                const backward_t& bckwd,
+                bool learnable)
             : value_(std::make_shared<Eigen::MatrixXd>(val)),
             derivative_(val.rows(), val.cols()), lhs_(op1),
-            rhs_(op2), id_(my_id), backward_(bckwd), graph_(g) {
+            rhs_(op2), id_(my_id), backward_(bckwd), graph_(g),
+            learnable_(learnable) {
             derivative_.setZero();
         }
         ComputationGraph* graph() const { return graph_; }
@@ -58,6 +63,8 @@ class VarImpl {
         Eigen::MatrixXd& value() { return *value_;}
         const Eigen::MatrixXd& derivative() const { return derivative_;}
         Eigen::MatrixXd& derivative() { return derivative_;}
+
+        bool IsLearnable() const { return learnable_; }
 
         void ClearDerivative() { derivative_.setZero(); }
 
@@ -82,6 +89,7 @@ class Var {
         Eigen::MatrixXd& value() { return var_->value();}
         const Eigen::MatrixXd& derivative() const { return var_->derivative();}
         Eigen::MatrixXd& derivative() { return var_->derivative();}
+        bool IsLearnable() const { return var_->IsLearnable(); }
 
         void Backward(Var* lhs, Var* rhs) {
             var_->Backward(*this, lhs, rhs);
@@ -99,7 +107,7 @@ class ComputationGraph {
     std::vector<std::unique_ptr<VarImpl>> values_;
 
     public:
-    Var CreateParam(std::shared_ptr<Eigen::MatrixXd> val);
+    Var CreateParam(std::shared_ptr<Eigen::MatrixXd> val, bool learnable = false);
     Var CreateParam(const Eigen::MatrixXd& val);
     Var CreateNode(
             const Eigen::MatrixXd& val,
@@ -109,7 +117,7 @@ class ComputationGraph {
     void BackpropFrom(Var& x, double clip = 0);
     void ClearGrad();
     void ClearIntermediateGradientsFrom(Var x);
-    void Update(Optimizer& opt, const std::set<Var>& params);
+    void Update(Optimizer& opt);
 };
 
 }

@@ -6,7 +6,7 @@
 namespace ad {
 namespace nn {
 
-LSTMLayer::LSTMLayer(size_t output_size, size_t input_size)
+LSTMParams::LSTMParams(size_t output_size, size_t input_size, double init)
     : wix_(std::make_shared<Eigen::MatrixXd>(output_size, input_size)),
     wih_(std::make_shared<Eigen::MatrixXd>(output_size, output_size)),
     bi_(std::make_shared<Eigen::MatrixXd>(output_size, 1)),
@@ -21,100 +21,95 @@ LSTMLayer::LSTMLayer(size_t output_size, size_t input_size)
 
     wcx_(std::make_shared<Eigen::MatrixXd>(output_size, input_size)),
     wch_(std::make_shared<Eigen::MatrixXd>(output_size, output_size)),
-    bc_(std::make_shared<Eigen::MatrixXd>(output_size, 1)) {
-        utils::RandomInit(*wix_, -1, 1);
-        utils::RandomInit(*wih_, -1, 1);
-        utils::RandomInit(*bi_, -1, 1);
+    bc_(std::make_shared<Eigen::MatrixXd>(output_size, 1)),
 
-        utils::RandomInit(*wfx_, -1, 1);
-        utils::RandomInit(*wfh_, -1, 1);
-        utils::RandomInit(*bf_, -1, 1);
+    cell_(std::make_shared<Eigen::MatrixXd>(output_size, 1)),
+    hidden_(std::make_shared<Eigen::MatrixXd>(output_size, 1)) {
+        utils::RandomInit(*wix_, -init, init);
+        utils::RandomInit(*wih_, -init, init);
+        utils::RandomInit(*bi_, -init, init);
 
-        utils::RandomInit(*wox_, -1, 1);
-        utils::RandomInit(*woh_, -1, 1);
-        utils::RandomInit(*bo_, -1, 1);
+        utils::RandomInit(*wfx_, -init, init);
+        utils::RandomInit(*wfh_, -init, init);
+        utils::RandomInit(*bf_, -init, init);
 
-        utils::RandomInit(*wcx_, -1, 1);
-        utils::RandomInit(*wch_, -1, 1);
-        utils::RandomInit(*bc_, -1, 1);
+        utils::RandomInit(*wox_, -init, init);
+        utils::RandomInit(*woh_, -init, init);
+        utils::RandomInit(*bo_, -init, init);
+
+        utils::RandomInit(*wcx_, -init, init);
+        utils::RandomInit(*wch_, -init, init);
+        utils::RandomInit(*bc_, -init, init);
+
+        utils::RandomInit(*cell_, -init, init);
+        utils::RandomInit(*hidden_, -init, init);
 }
 
 
-NeuralOutput<std::pair<std::vector<Var>, Var>> LSTMLayer::ComputeWithHidden(
-        const NeuralOutput<std::vector<Var>>& in) const {
-    std::vector<Var> out;
-    out.reserve(in.out.size());
-
-    ComputationGraph* g = in.out[0].graph();
-
-    Var wix = g->CreateParam(wix_);
-    Var wih = g->CreateParam(wih_);
-    Var bi = g->CreateParam(bi_);
-
-    Var wfx = g->CreateParam(wfx_);
-    Var wfh = g->CreateParam(wfh_);
-    Var bf = g->CreateParam(bf_);
-
-    Var wox = g->CreateParam(wox_);
-    Var woh = g->CreateParam(woh_);
-    Var bo = g->CreateParam(bo_);
-
-    Var wcx = g->CreateParam(wcx_);
-    Var wch = g->CreateParam(wch_);
-    Var bc = g->CreateParam(bc_);
-
-    Eigen::MatrixXd zero(wox_->rows(), 1);
-    zero.setZero();
-
-    Var hidden = g->CreateParam(zero);
-    Var cell_prev = g->CreateParam(zero);
-
-    for (Var x : in.out) {
-        Var input_gate = Sigmoid(wix * x + wih * hidden + bi);
-        Var forget_gate = Sigmoid(wfx * x + wfh * hidden + bf);
-        Var output_gate = Sigmoid(wox * x + woh * hidden + bo);
-        Var cell_write = Tanh(wcx * x + wch * hidden + bc);
-
-        Var cell_d = (forget_gate ^ cell_prev) + (input_gate ^ cell_write);
-
-        Var hidden_d = output_gate ^ Tanh(cell_d);
-
-        hidden = hidden_d;
-        cell_prev = cell_d;
-        out.push_back(hidden);
-    }
-
-    return in.Forward(std::make_pair(out, cell_prev), {
-            wix, wih, bi,
-            wfx, wfh, bf,
-            wox, woh, bo,
-            wcx, wch, bc });
+void LSTMParams::ResizeInput(size_t in, double init) {
+    utils::RandomExpandMatrix(*wix_, wix_->rows(), in, -init, init);
+    utils::RandomExpandMatrix(*wfx_, wfx_->rows(), in, -init, init);
+    utils::RandomExpandMatrix(*wox_, wox_->rows(), in, -init, init);
+    utils::RandomExpandMatrix(*wcx_, wcx_->rows(), in, -init, init);
 }
 
-void LSTMLayer::ResizeInput(size_t in) {
-    utils::RandomExpandMatrix(*wix_, wix_->rows(), in, -1, 1);
-    utils::RandomExpandMatrix(*wfx_, wix_->rows(), in, -1, 1);
-    utils::RandomExpandMatrix(*wox_, wix_->rows(), in, -1, 1);
-    utils::RandomExpandMatrix(*wcx_, wix_->rows(), in, -1, 1);
+void LSTMParams::ResizeOutput(size_t out, double init) {
+    size_t input_size = wix_->cols();
+    utils::RandomExpandMatrix(*wix_, out, input_size, -init, init);
+    utils::RandomExpandMatrix(*wih_, out, out, -init, init);
+    utils::RandomExpandMatrix(*bi_, out, 1, -init, init);
+
+    utils::RandomExpandMatrix(*wfx_, out, input_size, -init, init);
+    utils::RandomExpandMatrix(*wfh_, out, out, -init, init);
+    utils::RandomExpandMatrix(*bf_, out, 1, -init, init);
+
+    utils::RandomExpandMatrix(*wox_, out, input_size, -init, init);
+    utils::RandomExpandMatrix(*woh_, out, out, -init, init);
+    utils::RandomExpandMatrix(*bo_, out, 1, -init, init);
+
+    utils::RandomExpandMatrix(*wcx_, out, input_size, -init, init);
+    utils::RandomExpandMatrix(*wch_, out, out, -init, init);
+    utils::RandomExpandMatrix(*bc_, out, 1, -init, init);
+
+    utils::RandomExpandMatrix(*cell_, out, 1, -init, init);
+    utils::RandomExpandMatrix(*hidden_, out, 1, -init, init);
 }
 
-void LSTMLayer::ResizeOutput(size_t out) {
-    size_t hidden_size = wix_->cols();
-    utils::RandomExpandMatrix(*wix_, out, hidden_size, -1, 1);
-    utils::RandomExpandMatrix(*wih_, out, hidden_size, -1, 1);
-    utils::RandomExpandMatrix(*bi_, out, 1, -1, 1);
+LSTMLayer::LSTMLayer(
+        ComputationGraph& g, const LSTMParams& params, bool learnable)
+    : wix_(g.CreateParam(params.wix_, learnable)),
+    wih_(g.CreateParam(params.wih_, learnable)),
+    bi_(g.CreateParam(params.bi_, learnable)),
 
-    utils::RandomExpandMatrix(*wfx_, out, hidden_size, -1, 1);
-    utils::RandomExpandMatrix(*wfh_, out, hidden_size, -1, 1);
-    utils::RandomExpandMatrix(*bf_, out, 1, -1, 1);
+    wfx_(g.CreateParam(params.wfx_, learnable)),
+    wfh_(g.CreateParam(params.wfh_, learnable)),
+    bf_(g.CreateParam(params.bf_, learnable)),
 
-    utils::RandomExpandMatrix(*wox_, out, hidden_size, -1, 1);
-    utils::RandomExpandMatrix(*woh_, out, hidden_size, -1, 1);
-    utils::RandomExpandMatrix(*bo_, out, 1, -1, 1);
+    wox_(g.CreateParam(params.wox_, learnable)),
+    woh_(g.CreateParam(params.woh_, learnable)),
+    bo_(g.CreateParam(params.bo_, learnable)),
 
-    utils::RandomExpandMatrix(*wcx_, out, hidden_size, -1, 1);
-    utils::RandomExpandMatrix(*wch_, out, hidden_size, -1, 1);
-    utils::RandomExpandMatrix(*bc_, out, 1, -1, 1);
+    wcx_(g.CreateParam(params.wcx_, learnable)),
+    wch_(g.CreateParam(params.wch_, learnable)),
+    bc_(g.CreateParam(params.bc_, learnable)),
+    hidden_(g.CreateParam(params.hidden_, learnable)),
+    cell_(g.CreateParam(params.cell_, learnable)) {
+}
+
+Var LSTMLayer::Step(Var x) {
+    Var input_gate = Sigmoid(wix_ * x + wih_ * hidden_ + bi_);
+    Var forget_gate = Sigmoid(wfx_ * x + wfh_ * hidden_ + bf_);
+    Var output_gate = Sigmoid(wox_ * x + woh_ * hidden_ + bo_);
+    Var cell_write = Tanh(wcx_ * x + wch_ * hidden_ + bc_);
+
+    Var cell_d = (forget_gate ^ cell_) + (input_gate ^ cell_write);
+
+    Var hidden_d = output_gate ^ Tanh(cell_d);
+
+    hidden_ = hidden_d;
+    cell_ = cell_d;
+
+    return hidden_;
 }
 
 } // nn
