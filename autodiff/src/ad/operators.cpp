@@ -246,4 +246,20 @@ Var Tanh(const Var& x) {
     return x.graph()->CreateNode(res, x, no_operand, TanhBackprop);
 }
 
+static void ColAppendBackprop(Var& val, Var* lhs, Var* rhs) {
+    lhs->derivative() += val.derivative().block(0, 0, lhs->derivative().rows(), 1);
+    rhs->derivative() += val.derivative().block(
+            lhs->derivative().rows(), 0, rhs->derivative().rows(), 1);
+}
+
+Var ColAppend(Var x, Var y) {
+    if (x.value().cols() != 1 || y.value().cols() != 1) {
+        throw std::runtime_error("cannot append not-a-column-vectors");
+    }
+
+    Eigen::MatrixXd cated(x.value().rows() + y.value().rows(), 1);
+    cated << x.value(), y.value();
+    return x.graph()->CreateNode(cated, x, y, ColAppendBackprop);
+}
+
 }

@@ -26,5 +26,6 @@ Var Mean(const Var& a);
 Var MSE(const Var& h, const Var& y);
 Var NthCol(const Var& w, int n);
 Var Tanh(const Var& x);
+Var ColAppend(Var x, Var y);
 
 }
