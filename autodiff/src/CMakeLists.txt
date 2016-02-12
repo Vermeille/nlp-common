@@ -22,8 +22,6 @@ add_library(ad
     ad/operators.h
     ad/hashtable.h
     ad/nn/fullyconn.h
-    ad/nn/input-layer.h
-    ad/nn/neural-output.h
     ad/nn/rnn.h
     ad/nn/lstm.h
     ad/nn/highway-layer.h
