@@ -11,13 +11,13 @@
 
 class SequenceClassifier {
     ad::nn::Hashtable words_;
-    ad::nn::RNNLayer encoder_;
-    ad::nn::FullyConnLayer decoder_;
+    ad::nn::RNNLayerParams encoder_;
+    ad::nn::FullyConnParams decoder_;
 
     size_t input_size_;
     size_t output_size_;
 
-    ad::nn::NeuralOutput<ad::Var> ComputeModel(
+    ad::Var ComputeModel(
             ad::ComputationGraph& g,
             const std::vector<WordFeatures>& ws) const;
   public:

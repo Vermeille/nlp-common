@@ -11,32 +11,34 @@ SequenceClassifier::SequenceClassifier(
     output_size_(out_sz) {
 }
 
-ad::nn::NeuralOutput<ad::Var> SequenceClassifier::ComputeModel(
+ad::Var SequenceClassifier::ComputeModel(
         ad::ComputationGraph& g,
         const std::vector<WordFeatures>& ws) const {
-    std::vector<ad::Var> words;
-    std::transform(ws.begin(), ws.end(), std::back_inserter(words),
-            [&](const WordFeatures& wf) {
-                return words_.MakeVarFor(g, wf.idx);
-            }
-    );
-    auto a1 = ad::nn::InputLayer(words);
-    auto a2 = encoder_.Encode(a1);
-    auto a3 = decoder_.Compute(a2);
-    a3.out = ad::Softmax(a3.out);
-    return a3;
+    using namespace ad;
+    nn::RNNLayer encoder(g, encoder_);
+    nn::FullyConnLayer decoder(g, decoder_);
+
+    Var encoded(nullptr);
+    for (auto& w : ws) {
+        encoded = encoder.Step(words_.MakeVarFor(g, w.idx));
+    }
+    return ad::Softmax(decoder.Compute(encoded));
 }
 
 Eigen::MatrixXd SequenceClassifier::ComputeClass(
         const std::vector<WordFeatures>& ws) const {
     ad::ComputationGraph g;
-    return ComputeModel(g, ws).out.value();
+    return ComputeModel(g, ws).value();
 }
 
 double SequenceClassifier::Train(const Document& doc) {
     int nb_corrects = 0;
 
     for (auto& ex : doc.examples) {
+        if (ex.inputs.empty()) {
+            continue;
+        }
+
         using namespace ad;
         ComputationGraph g;
 
@@ -45,15 +47,14 @@ double SequenceClassifier::Train(const Document& doc) {
 
         Var y = g.CreateParam(y_mat);
         auto h = ComputeModel(g, ex.inputs);
-        Var J = ad::MSE(y, h.out) + 1e-4 * nn::L2ForAllParams(h);
+        Var J = ad::MSE(y, h);
 
         opt::SGD sgd(0.1);
-        g.BackpropFrom(J);
-        g.Update(sgd, *h.params);
+        g.BackpropFrom(J, 5);
+        g.Update(sgd);
 
-        Label predicted = utils::OneHotVectorDecode(h.out.value());
+        Label predicted = utils::OneHotVectorDecode(h.value());
         nb_corrects += predicted == ex.output ? 1 : 0;
-        std::cout << "nll = " << J.value()(0, 0) << "\n";
     }
 
     return 100.0 * nb_corrects / doc.examples.size();
