@@ -106,7 +106,7 @@ class ComputationGraph {
             const Var& lhs,
             const Var& rhs,
             backward_t bwd);
-    void BackpropFrom(Var& x);
+    void BackpropFrom(Var& x, double clip = 0);
     void ClearGrad();
     void ClearIntermediateGradientsFrom(Var x);
     void Update(Optimizer& opt, const std::set<Var>& params);

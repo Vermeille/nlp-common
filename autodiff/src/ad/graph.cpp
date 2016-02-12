@@ -30,11 +30,22 @@ Var ComputationGraph::CreateNode(
     return Var(values_.back().get());
 }
 
-void ComputationGraph::BackpropFrom(Var& x) {
+static void Clip(Eigen::MatrixXd& mat, double clip) {
+    double* data = mat.data();
+    for (int i = 0; i < mat.size(); ++i) {
+        data[i] = data[i] > clip ? clip : data[i];
+        data[i] = data[i] < -clip ? -clip : data[i];
+    }
+}
+
+void ComputationGraph::BackpropFrom(Var& x, double clip) {
     int id = x.id();
     values_[id]->InitBackprop();
     for (int i = id; i >= 0; --i) {
         Var cur(values_[i].get());
+        if (clip != 0) {
+            Clip(cur.derivative(), clip);
+        }
         Var nullvar(nullptr);
         if (cur.lhs() == -1) {
             cur.Backward(nullptr, nullptr);
