@@ -15,22 +15,22 @@ BagOfWords::BagOfWords()
         output_size_(0) {
 }
 
-ad::nn::NeuralOutput<ad::Var> BagOfWords::ComputeModel(
+ad::Var BagOfWords::ComputeModel(
         ad::ComputationGraph& g,
         const std::vector<WordFeatures>& ws) const {
     using namespace ad;
-    std::vector<int> idxs;
-    idxs.reserve(ws.size());
-    std::transform(ws.begin(), ws.end(), std::back_inserter(idxs),
-            [](const WordFeatures& wf) { return wf.idx; }
-        );
 
-    return nn::Map(Softmax, nn::Sum(nn::HashtableQuery(g, words_, idxs)));
+    Var sum = words_.MakeVarFor(g, ws[0].idx);
+    for (size_t i = 1; i < ws.size(); ++i) {
+        sum = sum + words_.MakeVarFor(g, ws[i].idx);
+    }
+
+    return Softmax(sum);
 }
 
 Eigen::MatrixXd BagOfWords::ComputeClass(const std::vector<WordFeatures>& ws) const {
     ad::ComputationGraph g;
-    return ComputeModel(g, ws).out.value();
+    return ComputeModel(g, ws).value();
 }
 
 int BagOfWords::Train(const Document& doc) {
@@ -46,13 +46,13 @@ int BagOfWords::Train(const Document& doc) {
 
         auto h = ComputeModel(g, ex.inputs);
 
-        Var J = ad::CrossEntropy(y, h.out);
+        Var J = ad::CrossEntropy(y, h);
 
         opt::SGD sgd(0.1);
-        g.BackpropFrom(J);
-        g.Update(sgd, *h.params);
+        g.BackpropFrom(J, 5);
+        g.Update(sgd);
 
-        Label predicted = utils::OneHotVectorDecode(h.out.value());
+        Label predicted = utils::OneHotVectorDecode(h.value());
         nb_correct += predicted == ex.output ? 1 : 0;
         ++nb_tokens;
 

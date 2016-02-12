@@ -13,7 +13,7 @@ class BagOfWords {
     ad::nn::Hashtable words_;
     size_t output_size_;
 
-    ad::nn::NeuralOutput<ad::Var> ComputeModel(
+    ad::Var ComputeModel(
             ad::ComputationGraph& g,
             const std::vector<WordFeatures>& ws) const;
 
