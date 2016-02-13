@@ -17,7 +17,7 @@ Var EltSquare(const Var& v1);
 Var operator^(const Var& v1, const Var& v2);
 Var Log(const Var& x);
 Var NLog(const Var& x);
-Var CrossEntropy(const Var& y, const Var& h);
+Var CrossEntropy(const Var& h, const Var& y);
 Var Exp(const Var& x);
 Var Softmax(const Var& x);
 Var Sigmoid(const Var& x);

@@ -129,7 +129,7 @@ Var NLog(const Var& x) {
     return x.graph()->CreateNode(res, x, no_operand, NLogBackprop);
 }
 
-Var CrossEntropy(const Var& y, const Var& h) {
+Var CrossEntropy(const Var& h, const Var& y) {
     return Sum(y ^ NLog(h));
 }
 
