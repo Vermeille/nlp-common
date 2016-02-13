@@ -42,3 +42,15 @@ std::vector<WordFeatures> Tokenizer::FR(const std::wstring& str) {
 std::vector<WordFeatures> Tokenizer::FR(const std::string& str) {
     return FR(ToWideStr(str));
 }
+
+std::vector<WordFeatures> Tokenizer::CharLevel(const std::wstring& str) {
+    std::vector<WordFeatures> sentence;
+    for (auto c : str) {
+        sentence.push_back(std::wstring() + c);
+    }
+    return sentence;
+}
+
+std::vector<WordFeatures> Tokenizer::CharLevel(const std::string& str) {
+    return Tokenizer::CharLevel(ToWideStr(str));
+}
