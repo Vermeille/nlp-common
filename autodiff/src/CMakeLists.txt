@@ -14,6 +14,7 @@ add_library(ad
     ad/nn/rnn.cpp
     ad/nn/lstm.cpp
     ad/nn/highway-layer.cpp
+    ad/optimizers/adagrad.cpp
 
     ad/ad.h
     ad/nn.h
@@ -27,6 +28,7 @@ add_library(ad
     ad/nn/highway-layer.h
     ad/optimizer.h
     ad/optimizers/sgd.h
+    ad/optimizers/adagrad.h
 )
 
 target_include_directories(ad PUBLIC

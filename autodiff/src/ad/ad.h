@@ -6,4 +6,5 @@
 #include "operators.h"
 #include "optimizer.h"
 #include "optimizers/sgd.h"
+#include "optimizers/adagrad.h"
 
