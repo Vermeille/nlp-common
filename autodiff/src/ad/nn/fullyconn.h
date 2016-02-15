@@ -40,6 +40,8 @@ class FullyConnLayer {
                 bool learnable = true);
 
         Var Compute(Var in) const;
+
+        std::vector<Var> Params() const;
 };
 
 } // nn

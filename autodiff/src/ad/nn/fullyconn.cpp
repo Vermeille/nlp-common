@@ -53,6 +53,9 @@ FullyConnParams FullyConnParams::FromSerialized(std::istream& in) {
     return fc;
 }
 
+std::vector<Var> FullyConnLayer::Params() const {
+    return { w_, b_ };
+}
 
 } // nn
 } // ad
