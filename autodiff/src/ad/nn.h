@@ -12,6 +12,7 @@
 
 #include "nn/fullyconn.h"
 #include "nn/rnn.h"
+#include "nn/mrnn.h"
 #include "nn/lstm.h"
 
 namespace ad {

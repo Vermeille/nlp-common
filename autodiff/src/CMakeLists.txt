@@ -12,6 +12,7 @@ add_library(ad
     ad/hashtable.cpp
     ad/nn/fullyconn.cpp
     ad/nn/rnn.cpp
+    ad/nn/mrnn.cpp
     ad/nn/lstm.cpp
     ad/nn/highway-layer.cpp
     ad/optimizers/adagrad.cpp
@@ -24,6 +25,7 @@ add_library(ad
     ad/hashtable.h
     ad/nn/fullyconn.h
     ad/nn/rnn.h
+    ad/nn/mrnn.h
     ad/nn/lstm.h
     ad/nn/highway-layer.h
     ad/optimizer.h
