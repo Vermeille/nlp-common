@@ -40,7 +40,10 @@ class RNNLayer {
         Var h_;
 
     public:
-        RNNLayer(ComputationGraph& g, const RNNLayerParams& params);
+        RNNLayer(
+                ComputationGraph& g,
+                const RNNLayerParams& params,
+                bool learnable = true);
 
         Var Step(Var in);
 };

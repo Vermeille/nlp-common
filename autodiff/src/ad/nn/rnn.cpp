@@ -19,11 +19,14 @@ RNNLayerParams::RNNLayerParams(int out_sz, int in_sz, double init) :
     ad::utils::RandomInit(*h_ , -init, init);
 }
 
-RNNLayer::RNNLayer(ComputationGraph& g, const RNNLayerParams& params) :
-        whx_(g.CreateParam(params.whx_)),
-        whh_(g.CreateParam(params.whh_)),
-        bh_(g.CreateParam(params.bh_)),
-        h_(g.CreateParam(params.h_)) {
+RNNLayer::RNNLayer(
+            ComputationGraph& g,
+            const RNNLayerParams& params,
+            bool learnable) :
+        whx_(g.CreateParam(params.whx_, learnable)),
+        whh_(g.CreateParam(params.whh_, learnable)),
+        bh_(g.CreateParam(params.bh_, learnable)),
+        h_(g.CreateParam(params.h_, learnable)) {
 }
 
 Var RNNLayer::Step(Var x) {
