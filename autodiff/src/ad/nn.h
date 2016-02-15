@@ -18,6 +18,7 @@ namespace ad {
 namespace nn {
 
 Var L2(const Var& x);
+Var L2(std::vector<Var> x);
 
 } // nn
 } // ad
