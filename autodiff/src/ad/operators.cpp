@@ -227,9 +227,14 @@ static void TanhBackprop(Var& val, Var* lhs, Var*) {
     const double* dx = val.derivative().data();
     const double* a = lhs->value().data();
     for (int i = 0; i < val.value().size(); ++i) {
-        double expm2x = exp(-2 * a[i]);
-        double expm2xp1 = 1 + expm2x;
-        da[i] += dx[i] * (4 * expm2x / (expm2xp1 * expm2xp1));
+        double denom = std::cosh(2 * a[i]) + 1;
+        denom = denom * denom;
+        if (std::isfinite(denom)) {
+            double num = std::cosh(a[i]);
+            num = 4 * num * num;
+            double res = num / denom;
+            da[i] += dx[i] * res;
+        }
     }
 }
 
@@ -238,11 +243,9 @@ Var Tanh(const Var& x) {
     double* dst_ptr = res.data();
     const double* src_ptr = x.value().data();
     for (int i = 0; i < res.size(); ++i) {
-        double expm2x = exp(-2 * src_ptr[i]);
-        dst_ptr[i] = (1 - expm2x) / (1 + expm2x);
+        dst_ptr[i] = std::tanh(src_ptr[i]);
     }
 
-    // Sigmoid derivative is the same as Softmax's
     return x.graph()->CreateNode(res, x, no_operand, TanhBackprop);
 }
 
