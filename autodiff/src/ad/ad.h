@@ -7,4 +7,5 @@
 #include "optimizer.h"
 #include "optimizers/sgd.h"
 #include "optimizers/adagrad.h"
+#include "optimizers/minibatch.h"
 

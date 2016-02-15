@@ -17,7 +17,6 @@ class Adagrad : public Optimizer {
         double epsilon_;
 
         Eigen::MatrixXd& AccumulatedGradient(Var v);
-        std::pair<int, Eigen::MatrixXd>& SetCurrentGradient(Var v);
 
     public:
         Adagrad(double learning_rate = 1, double epsilon = 1e-5) :
