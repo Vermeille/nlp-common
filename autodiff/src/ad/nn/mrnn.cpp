@@ -9,55 +9,50 @@ namespace ad {
 namespace nn {
 
 DiscreteMRNNParams::DiscreteMRNNParams(int out_sz, size_t in_sz, double init) :
-        bh_(std::make_shared<Eigen::MatrixXd>(out_sz, 1)),
-        h_(std::make_shared<Eigen::MatrixXd>(out_sz, 1)) {
+        bh_(std::make_shared<Param>(out_sz, 1)),
+        h_(std::make_shared<Param>(out_sz, 1)) {
     for (size_t i = 0; i < in_sz; ++i) {
-        whx_.push_back(std::make_shared<Eigen::MatrixXd>(out_sz, 1));
-        ad::utils::RandomInit(*whx_.back() , -init, init);
+        whx_.push_back(std::make_shared<Param>(out_sz, 1, init));
     }
 
     for (size_t i = 0; i < in_sz; ++i) {
-        whh_.push_back(std::make_shared<Eigen::MatrixXd>(out_sz, out_sz));
-        ad::utils::RandomInit(*whh_.back() , -init, init);
+        whh_.push_back(std::make_shared<Param>(out_sz, out_sz, init));
     }
-    ad::utils::RandomInit(*bh_ , -init, init);
-    h_->setZero();
+    h_->value().setZero();
 }
 
 void DiscreteMRNNParams::ResizeInput(size_t size, double init) {
     size_t out_sz = bh_->rows();
     while (whx_.size() < size) {
-        whx_.push_back(std::make_shared<Eigen::MatrixXd>(out_sz, 1));
-        ad::utils::RandomInit(*whx_.back() , -init, init);
+        whx_.push_back(std::make_shared<Param>(out_sz, 1, init));
     }
     while (whh_.size() < size) {
-        whh_.push_back(std::make_shared<Eigen::MatrixXd>(out_sz, out_sz));
-        ad::utils::RandomInit(*whh_.back() , -init, init);
+        whh_.push_back(std::make_shared<Param>(out_sz, out_sz, init));
     }
 }
 
 void DiscreteMRNNParams::ResizeOutput(size_t size, double init) {
     for (auto& v : whx_) {
-        utils::RandomExpandMatrix(*v, size, 1, -init, init);
+        utils::RandomExpandMatrix(v->value(), size, 1, -init, init);
     }
     for (auto& v : whh_) {
-        utils::RandomExpandMatrix(*v, size, size, -init, init);
+        utils::RandomExpandMatrix(v->value(), size, size, -init, init);
     }
-    utils::RandomExpandMatrix(*h_, size, 1, -init, init);
-    utils::RandomExpandMatrix(*bh_, size, 1, -init, init);
+    utils::RandomExpandMatrix(h_->value(), size, 1, -init, init);
+    utils::RandomExpandMatrix(bh_->value(), size, 1, -init, init);
 }
 
 void DiscreteMRNNParams::Serialize(std::ostream& out) const {
     out << "MRNN\n";
     out << whx_.size() << "\n";
     for (auto& v : whx_) {
-        utils::WriteMatrixTxt(*v, out);
+        utils::WriteMatrixTxt(v->value(), out);
     }
     for (auto& v : whh_) {
-        utils::WriteMatrixTxt(*v, out);
+        utils::WriteMatrixTxt(v->value(), out);
     }
-    utils::WriteMatrixTxt(*bh_, out);
-    utils::WriteMatrixTxt(*h_, out);
+    utils::WriteMatrixTxt(bh_->value(), out);
+    utils::WriteMatrixTxt(h_->value(), out);
 }
 
 DiscreteMRNNParams DiscreteMRNNParams::FromSerialized(std::istream& in) {
@@ -71,15 +66,13 @@ DiscreteMRNNParams DiscreteMRNNParams::FromSerialized(std::istream& in) {
     in >> in_sz;
     DiscreteMRNNParams rnn(0, 0);
     for (size_t i = 0; i < in_sz; ++i) {
-        rnn.whx_.push_back(
-                std::make_shared<Eigen::MatrixXd>(utils::ReadMatrixTxt(in)));
+        rnn.whx_.push_back(std::make_shared<Param>(utils::ReadMatrixTxt(in)));
     }
     for (size_t i = 0; i < in_sz; ++i) {
-        rnn.whh_.push_back(
-                std::make_shared<Eigen::MatrixXd>(utils::ReadMatrixTxt(in)));
+        rnn.whh_.push_back(std::make_shared<Param>(utils::ReadMatrixTxt(in)));
     }
-    *rnn.h_ = utils::ReadMatrixTxt(in);
-    *rnn.bh_ = utils::ReadMatrixTxt(in);
+    rnn.h_->value() = utils::ReadMatrixTxt(in);
+    rnn.bh_->value() = utils::ReadMatrixTxt(in);
     return rnn;
 }
 

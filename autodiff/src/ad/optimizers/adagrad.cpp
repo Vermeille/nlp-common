@@ -4,11 +4,11 @@ namespace ad {
 namespace opt {
 
 Eigen::MatrixXd& Adagrad::AccumulatedGradient(Var v) {
-    auto sqgrad = grad_acc_.find(v.id());
+    auto sqgrad = grad_acc_.find(v.persistent_id());
     if (sqgrad == grad_acc_.end()) {
         sqgrad = grad_acc_.insert(
                 std::make_pair(
-                    v.id(),
+                    v.persistent_id(),
                     Eigen::MatrixXd(v.value().rows(), v.value().cols())
                 )
             ).first;
@@ -23,7 +23,7 @@ void Adagrad::Update(Var& v) {
         return;
     }
 
-    Eigen::MatrixXd cur_grad = v.derivative();
+    Eigen::MatrixXd& cur_grad = v.derivative();
     Eigen::MatrixXd& sqgrad = AccumulatedGradient(v);
     sqgrad += cur_grad.cwiseProduct(cur_grad);
 

@@ -11,24 +11,24 @@ namespace ad {
 namespace nn {
 
 struct LSTMParams {
-    std::shared_ptr<Eigen::MatrixXd> wix_;
-    std::shared_ptr<Eigen::MatrixXd> wih_;
-    std::shared_ptr<Eigen::MatrixXd> bi_;
+    std::shared_ptr<Param> wix_;
+    std::shared_ptr<Param> wih_;
+    std::shared_ptr<Param> bi_;
 
-    std::shared_ptr<Eigen::MatrixXd> wfx_;
-    std::shared_ptr<Eigen::MatrixXd> wfh_;
-    std::shared_ptr<Eigen::MatrixXd> bf_;
+    std::shared_ptr<Param> wfx_;
+    std::shared_ptr<Param> wfh_;
+    std::shared_ptr<Param> bf_;
 
-    std::shared_ptr<Eigen::MatrixXd> wox_;
-    std::shared_ptr<Eigen::MatrixXd> woh_;
-    std::shared_ptr<Eigen::MatrixXd> bo_;
+    std::shared_ptr<Param> wox_;
+    std::shared_ptr<Param> woh_;
+    std::shared_ptr<Param> bo_;
     // cell write params
-    std::shared_ptr<Eigen::MatrixXd> wcx_;
-    std::shared_ptr<Eigen::MatrixXd> wch_;
-    std::shared_ptr<Eigen::MatrixXd> bc_;
+    std::shared_ptr<Param> wcx_;
+    std::shared_ptr<Param> wch_;
+    std::shared_ptr<Param> bc_;
 
-    std::shared_ptr<Eigen::MatrixXd> cell_;
-    std::shared_ptr<Eigen::MatrixXd> hidden_;
+    std::shared_ptr<Param> cell_;
+    std::shared_ptr<Param> hidden_;
 
     void ResizeInput(size_t in, double init = 1);
     void ResizeOutput(size_t out, double init = 1);

@@ -9,14 +9,10 @@ namespace ad {
 namespace nn {
 
 RNNLayerParams::RNNLayerParams(int out_sz, int in_sz, double init) :
-        whx_(std::make_shared<Eigen::MatrixXd>(out_sz, in_sz)),
-        whh_(std::make_shared<Eigen::MatrixXd>(out_sz, out_sz)),
-        bh_(std::make_shared<Eigen::MatrixXd>(out_sz, 1)),
-        h_(std::make_shared<Eigen::MatrixXd>(out_sz, 1)) {
-    ad::utils::RandomInit(*whx_ , -init, init);
-    ad::utils::RandomInit(*whh_ , -init, init);
-    ad::utils::RandomInit(*bh_ , -init, init);
-    ad::utils::RandomInit(*h_ , -init, init);
+        whx_(std::make_shared<Param>(out_sz, in_sz, init)),
+        whh_(std::make_shared<Param>(out_sz, out_sz, init)),
+        bh_(std::make_shared<Param>(out_sz, 1, init)),
+        h_(std::make_shared<Param>(out_sz, 1, init)) {
 }
 
 RNNLayer::RNNLayer(
@@ -35,9 +31,9 @@ Var RNNLayer::Step(Var x) {
 
 void RNNLayerParams::Serialize(std::ostream& out) const {
     out << "RNN1\n";
-    utils::WriteMatrixTxt(*whx_, out);
-    utils::WriteMatrixTxt(*whh_, out);
-    utils::WriteMatrixTxt(*bh_, out);
+    utils::WriteMatrixTxt(whx_->value(), out);
+    utils::WriteMatrixTxt(whh_->value(), out);
+    utils::WriteMatrixTxt(bh_->value(), out);
 }
 
 RNNLayerParams RNNLayerParams::FromSerialized(std::istream& in) {
@@ -48,9 +44,9 @@ RNNLayerParams RNNLayerParams::FromSerialized(std::istream& in) {
     }
 
     RNNLayerParams rnn(0, 0);
-    *rnn.whx_ = utils::ReadMatrixTxt(in);
-    *rnn.whh_ = utils::ReadMatrixTxt(in);
-    *rnn.bh_ = utils::ReadMatrixTxt(in);
+    rnn.whx_->value() = utils::ReadMatrixTxt(in);
+    rnn.whh_->value() = utils::ReadMatrixTxt(in);
+    rnn.bh_->value() = utils::ReadMatrixTxt(in);
     return rnn;
 }
 

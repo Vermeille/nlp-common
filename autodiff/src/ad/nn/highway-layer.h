@@ -12,9 +12,9 @@ namespace ad {
 namespace nn {
 
 struct HighwayLayerParams {
-    std::shared_ptr<Eigen::MatrixXd> w_;
-    std::shared_ptr<Eigen::MatrixXd> wt_;
-    std::shared_ptr<Eigen::MatrixXd> wc_;
+    std::shared_ptr<Param> w_;
+    std::shared_ptr<Param> wt_;
+    std::shared_ptr<Param> wc_;
 
     HighwayLayerParams(size_t sz, double init = 1);
     void Resize(size_t in, double init = 1);

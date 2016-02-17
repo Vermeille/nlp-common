@@ -6,8 +6,15 @@ const Var no_operand(
         new VarImpl(nullptr, Eigen::MatrixXd(1,1), -1, -1, -1, DoNothingBackprop, false));
 void DoNothingBackprop(Var&, Var*, Var*) {}
 
+size_t Param::next_id_;
+
+Param::Param(size_t rows, size_t cols, double init)
+    : value_(rows, cols),
+    persistent_id_(0) {
+        ad::utils::RandomInit(value_, -init, init);
+}
 Var ComputationGraph::CreateParam(
-        std::shared_ptr<Eigen::MatrixXd> val, bool learnable) {
+        std::shared_ptr<Param> val, bool learnable) {
     int p_id = values_.size();
 
     values_.emplace_back(
@@ -16,7 +23,7 @@ Var ComputationGraph::CreateParam(
 }
 
 Var ComputationGraph::CreateParam(const Eigen::MatrixXd& val) {
-    return CreateParam(std::make_shared<Eigen::MatrixXd>(val));
+    return CreateParam(std::make_shared<Param>(val));
 }
 
 Var ComputationGraph::CreateNode(

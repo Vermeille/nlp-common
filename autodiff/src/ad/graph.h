@@ -17,9 +17,31 @@ class ComputationGraph;
 using backward_t = void(*)(Var&, Var*, Var*);
 void DoNothingBackprop(Var&, Var*, Var*);
 
+class Param {
+    private:
+        Eigen::MatrixXd value_;
+        mutable size_t persistent_id_;
+        static size_t next_id_;
+    public:
+        Param(size_t rows, size_t cols, double init = 1);
+        Param(const Eigen::MatrixXd& val) : value_(val), persistent_id_(0) { }
+        const Eigen::MatrixXd& value() const { return value_; }
+        Eigen::MatrixXd& value() { return value_; }
+        size_t rows() const { return value_.rows(); }
+        size_t cols() const { return value_.cols(); }
+        size_t GetPersistentId() const {
+            if (persistent_id_ != 0) {
+                return persistent_id_;
+            }
+            ++next_id_;
+            persistent_id_ = next_id_;
+            return persistent_id_;
+        }
+};
+
 class VarImpl {
     private:
-        std::shared_ptr<Eigen::MatrixXd> value_;
+        std::shared_ptr<Param> value_;
         Eigen::MatrixXd derivative_;
 
         int lhs_;
@@ -33,14 +55,19 @@ class VarImpl {
 
     public:
         VarImpl(ComputationGraph* g,
-                std::shared_ptr<Eigen::MatrixXd> val,
+                std::shared_ptr<Param> val,
                 int my_id,
                 int op1,
                 int op2,
                 const backward_t& bckwd,
                 bool learnable)
-            : value_(val), derivative_(val->rows(), val->cols()), lhs_(op1),
-            rhs_(op2), id_(my_id), backward_(bckwd), graph_(g),
+            : value_(val),
+            derivative_(val->value().rows(), val->value().cols()),
+            lhs_(op1),
+            rhs_(op2),
+            id_(my_id),
+            backward_(bckwd),
+            graph_(g),
             learnable_(learnable) {
             derivative_.setZero();
         }
@@ -52,18 +79,19 @@ class VarImpl {
                 int op2,
                 const backward_t& bckwd,
                 bool learnable)
-            : value_(std::make_shared<Eigen::MatrixXd>(val)),
+            : value_(std::make_shared<Param>(val)),
             derivative_(val.rows(), val.cols()), lhs_(op1),
             rhs_(op2), id_(my_id), backward_(bckwd), graph_(g),
             learnable_(learnable) {
             derivative_.setZero();
         }
         ComputationGraph* graph() const { return graph_; }
-        const Eigen::MatrixXd& value() const { return *value_;}
-        Eigen::MatrixXd& value() { return *value_;}
+        const Eigen::MatrixXd& value() const { return value_->value();}
+        Eigen::MatrixXd& value() { return value_->value();}
         const Eigen::MatrixXd& derivative() const { return derivative_;}
         Eigen::MatrixXd& derivative() { return derivative_;}
 
+        size_t persistent_id() const { return value_->GetPersistentId(); }
         bool IsLearnable() const { return learnable_; }
 
         void ClearDerivative() { derivative_.setZero(); }
@@ -94,6 +122,7 @@ class Var {
         void Backward(Var* lhs, Var* rhs) {
             var_->Backward(*this, lhs, rhs);
         }
+        size_t persistent_id() const { return var_->persistent_id(); }
         int id() const { return var_->id(); }
         int lhs() const { return var_->lhs(); }
         int rhs() const { return var_->rhs(); }
@@ -107,7 +136,7 @@ class ComputationGraph {
     std::vector<std::unique_ptr<VarImpl>> values_;
 
     public:
-    Var CreateParam(std::shared_ptr<Eigen::MatrixXd> val, bool learnable = false);
+    Var CreateParam(std::shared_ptr<Param> val, bool learnable = false);
     Var CreateParam(const Eigen::MatrixXd& val);
     Var CreateNode(
             const Eigen::MatrixXd& val,
@@ -118,6 +147,15 @@ class ComputationGraph {
     void ClearGrad();
     void ClearIntermediateGradientsFrom(Var x);
     void Update(Optimizer& opt);
+    std::vector<Var> GetAllLearnableVars() const { // FIXME make me iterable
+        std::vector<Var> vars;
+        for (auto& v : values_) {
+            if (v->IsLearnable()) {
+                vars.emplace_back(v.get());
+            }
+        }
+        return vars;
+    }
 };
 
 }

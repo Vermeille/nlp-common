@@ -7,72 +7,54 @@ namespace ad {
 namespace nn {
 
 LSTMParams::LSTMParams(size_t output_size, size_t input_size, double init)
-    : wix_(std::make_shared<Eigen::MatrixXd>(output_size, input_size)),
-    wih_(std::make_shared<Eigen::MatrixXd>(output_size, output_size)),
-    bi_(std::make_shared<Eigen::MatrixXd>(output_size, 1)),
+    : wix_(std::make_shared<Param>(output_size, input_size, init)),
+    wih_(std::make_shared<Param>(output_size, output_size, init)),
+    bi_(std::make_shared<Param>(output_size, 1, init)),
 
-    wfx_(std::make_shared<Eigen::MatrixXd>(output_size, input_size)),
-    wfh_(std::make_shared<Eigen::MatrixXd>(output_size, output_size)),
-    bf_(std::make_shared<Eigen::MatrixXd>(output_size, 1)),
+    wfx_(std::make_shared<Param>(output_size, input_size, init)),
+    wfh_(std::make_shared<Param>(output_size, output_size, init)),
+    bf_(std::make_shared<Param>(output_size, 1, init)),
 
-    wox_(std::make_shared<Eigen::MatrixXd>(output_size, input_size)),
-    woh_(std::make_shared<Eigen::MatrixXd>(output_size, output_size)),
-    bo_(std::make_shared<Eigen::MatrixXd>(output_size, 1)),
+    wox_(std::make_shared<Param>(output_size, input_size, init)),
+    woh_(std::make_shared<Param>(output_size, output_size, init)),
+    bo_(std::make_shared<Param>(output_size, 1, init)),
 
-    wcx_(std::make_shared<Eigen::MatrixXd>(output_size, input_size)),
-    wch_(std::make_shared<Eigen::MatrixXd>(output_size, output_size)),
-    bc_(std::make_shared<Eigen::MatrixXd>(output_size, 1)),
+    wcx_(std::make_shared<Param>(output_size, input_size, init)),
+    wch_(std::make_shared<Param>(output_size, output_size, init)),
+    bc_(std::make_shared<Param>(output_size, 1, init)),
 
-    cell_(std::make_shared<Eigen::MatrixXd>(output_size, 1)),
-    hidden_(std::make_shared<Eigen::MatrixXd>(output_size, 1)) {
-        utils::RandomInit(*wix_, -init, init);
-        utils::RandomInit(*wih_, -init, init);
-        utils::RandomInit(*bi_, -init, init);
-
-        utils::RandomInit(*wfx_, -init, init);
-        utils::RandomInit(*wfh_, -init, init);
-        utils::RandomInit(*bf_, -init, init);
-
-        utils::RandomInit(*wox_, -init, init);
-        utils::RandomInit(*woh_, -init, init);
-        utils::RandomInit(*bo_, -init, init);
-
-        utils::RandomInit(*wcx_, -init, init);
-        utils::RandomInit(*wch_, -init, init);
-        utils::RandomInit(*bc_, -init, init);
-
-        utils::RandomInit(*cell_, -init, init);
-        utils::RandomInit(*hidden_, -init, init);
+    cell_(std::make_shared<Param>(output_size, 1, init)),
+    hidden_(std::make_shared<Param>(output_size, 1, init)) {
 }
 
 
 void LSTMParams::ResizeInput(size_t in, double init) {
-    utils::RandomExpandMatrix(*wix_, wix_->rows(), in, -init, init);
-    utils::RandomExpandMatrix(*wfx_, wfx_->rows(), in, -init, init);
-    utils::RandomExpandMatrix(*wox_, wox_->rows(), in, -init, init);
-    utils::RandomExpandMatrix(*wcx_, wcx_->rows(), in, -init, init);
+    utils::RandomExpandMatrix(wix_->value(), wix_->rows(), in, -init, init);
+    utils::RandomExpandMatrix(wfx_->value(), wfx_->rows(), in, -init, init);
+    utils::RandomExpandMatrix(wox_->value(), wox_->rows(), in, -init, init);
+    utils::RandomExpandMatrix(wcx_->value(), wcx_->rows(), in, -init, init);
 }
 
 void LSTMParams::ResizeOutput(size_t out, double init) {
     size_t input_size = wix_->cols();
-    utils::RandomExpandMatrix(*wix_, out, input_size, -init, init);
-    utils::RandomExpandMatrix(*wih_, out, out, -init, init);
-    utils::RandomExpandMatrix(*bi_, out, 1, -init, init);
+    utils::RandomExpandMatrix(wix_->value(), out, input_size, -init, init);
+    utils::RandomExpandMatrix(wih_->value(), out, out, -init, init);
+    utils::RandomExpandMatrix(bi_->value(), out, 1, -init, init);
 
-    utils::RandomExpandMatrix(*wfx_, out, input_size, -init, init);
-    utils::RandomExpandMatrix(*wfh_, out, out, -init, init);
-    utils::RandomExpandMatrix(*bf_, out, 1, -init, init);
+    utils::RandomExpandMatrix(wfx_->value(), out, input_size, -init, init);
+    utils::RandomExpandMatrix(wfh_->value(), out, out, -init, init);
+    utils::RandomExpandMatrix(bf_->value(), out, 1, -init, init);
 
-    utils::RandomExpandMatrix(*wox_, out, input_size, -init, init);
-    utils::RandomExpandMatrix(*woh_, out, out, -init, init);
-    utils::RandomExpandMatrix(*bo_, out, 1, -init, init);
+    utils::RandomExpandMatrix(wox_->value(), out, input_size, -init, init);
+    utils::RandomExpandMatrix(woh_->value(), out, out, -init, init);
+    utils::RandomExpandMatrix(bo_->value(), out, 1, -init, init);
 
-    utils::RandomExpandMatrix(*wcx_, out, input_size, -init, init);
-    utils::RandomExpandMatrix(*wch_, out, out, -init, init);
-    utils::RandomExpandMatrix(*bc_, out, 1, -init, init);
+    utils::RandomExpandMatrix(wcx_->value(), out, input_size, -init, init);
+    utils::RandomExpandMatrix(wch_->value(), out, out, -init, init);
+    utils::RandomExpandMatrix(bc_->value(), out, 1, -init, init);
 
-    utils::RandomExpandMatrix(*cell_, out, 1, -init, init);
-    utils::RandomExpandMatrix(*hidden_, out, 1, -init, init);
+    utils::RandomExpandMatrix(cell_->value(), out, 1, -init, init);
+    utils::RandomExpandMatrix(hidden_->value(), out, 1, -init, init);
 }
 
 LSTMLayer::LSTMLayer(

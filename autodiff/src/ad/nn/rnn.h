@@ -11,21 +11,21 @@ namespace ad {
 namespace nn {
 
 struct RNNLayerParams {
-    std::shared_ptr<Eigen::MatrixXd> whx_;
-    std::shared_ptr<Eigen::MatrixXd> whh_;
-    std::shared_ptr<Eigen::MatrixXd> bh_;
-    std::shared_ptr<Eigen::MatrixXd> h_;
+    std::shared_ptr<Param> whx_;
+    std::shared_ptr<Param> whh_;
+    std::shared_ptr<Param> bh_;
+    std::shared_ptr<Param> h_;
 
     RNNLayerParams(int out_sz, int in_sz, double init = 1);
 
     void ResizeInput(int size, double init = 1) {
-        utils::RandomExpandMatrix(*whx_, whx_->rows(), size, -init, init);
+        utils::RandomExpandMatrix(whx_->value(), whx_->rows(), size, -init, init);
     }
 
     void ResizeOutput(int size, double init = 1) {
-        utils::RandomExpandMatrix(*whx_, size, whx_->cols(), -init, init);
-        utils::RandomExpandMatrix(*whh_, size, size, -init, init);
-        utils::RandomExpandMatrix(*bh_, size, init, -init, init);
+        utils::RandomExpandMatrix(whx_->value(), size, whx_->cols(), -init, init);
+        utils::RandomExpandMatrix(whh_->value(), size, size, -init, init);
+        utils::RandomExpandMatrix(bh_->value(), size, init, -init, init);
     }
 
     void Serialize(std::ostream& out) const;

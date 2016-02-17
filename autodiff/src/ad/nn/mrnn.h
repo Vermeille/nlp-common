@@ -11,10 +11,10 @@ namespace ad {
 namespace nn {
 
 struct DiscreteMRNNParams {
-    std::vector<std::shared_ptr<Eigen::MatrixXd>> whx_;
-    std::vector<std::shared_ptr<Eigen::MatrixXd>> whh_;
-    std::shared_ptr<Eigen::MatrixXd> bh_;
-    std::shared_ptr<Eigen::MatrixXd> h_;
+    std::vector<std::shared_ptr<Param>> whx_;
+    std::vector<std::shared_ptr<Param>> whh_;
+    std::shared_ptr<Param> bh_;
+    std::shared_ptr<Param> h_;
 
     DiscreteMRNNParams(int out_sz, size_t in_sz, double init = 1);
 

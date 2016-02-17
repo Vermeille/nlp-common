@@ -2,16 +2,14 @@
 
 #include <memory>
 
-#include <Eigen/Dense>
-
 #include "../graph.h"
 
 namespace ad {
 namespace nn {
 
 struct FullyConnParams {
-    std::shared_ptr<Eigen::MatrixXd> w_;
-    std::shared_ptr<Eigen::MatrixXd> b_;
+    std::shared_ptr<Param> w_;
+    std::shared_ptr<Param> b_;
 
     FullyConnParams(int out_sz, int in_sz, double init = 1);
 
@@ -20,12 +18,6 @@ struct FullyConnParams {
 
     void Serialize(std::ostream& out) const;
     static FullyConnParams FromSerialized(std::istream& in);
-
-    Eigen::MatrixXd& w() { return *w_; }
-    const Eigen::MatrixXd& w() const { return *w_; }
-
-    Eigen::MatrixXd& b() { return *b_; }
-    const Eigen::MatrixXd& b() const { return *b_; }
 };
 
 class FullyConnLayer {

@@ -6,13 +6,12 @@
 namespace ad {
 namespace nn {
 
-Hashtable::Hashtable(size_t wordvec_size, size_t vocab_size)
+Hashtable::Hashtable(size_t wordvec_size, size_t vocab_size, double init)
         : wordvec_size_(wordvec_size),
         vocab_size_(vocab_size) {
     w_.reserve(vocab_size);
     for (size_t i = 0; i < vocab_size; i++) {
-        w_.push_back(std::make_shared<Eigen::MatrixXd>(wordvec_size, 1));
-        ad::utils::RandomInit(*w_.back(), -1, 1);
+        w_.push_back(std::make_shared<Param>(wordvec_size, 1, init));
     }
 }
 
@@ -21,7 +20,7 @@ std::string Hashtable::Serialize() const {
     out << "HASHTABLE\n"
         << wordvec_size_ << " " << vocab_size_ << "\n";
     for (auto& w : w_) {
-        ad::utils::WriteMatrixTxt(*w, out);;
+        ad::utils::WriteMatrixTxt(w->value(), out);;
     }
 
     return out.str();
@@ -43,21 +42,20 @@ Hashtable Hashtable::FromSerialized(std::istream& in) {
     hash.vocab_size_ = vocab_size;
     for (size_t i = 0; i < vocab_size; ++i) {
         hash.w_.push_back(
-            std::make_shared<Eigen::MatrixXd>(ad::utils::ReadMatrixTxt(in)));
+                std::make_shared<Param>(ad::utils::ReadMatrixTxt(in)));
     }
     return hash;
 }
 
-void Hashtable::ResizeVectors(size_t size) {
+void Hashtable::ResizeVectors(size_t size, double init) {
     for (auto& w : w_) {
-        utils::RandomExpandMatrix(*w, size, 1, -1, 1);
+        utils::RandomExpandMatrix(w->value(), size, 1, -init, init);
     }
 }
 
-void Hashtable::ResizeVocab(size_t size) {
+void Hashtable::ResizeVocab(size_t size, double init) {
     for (unsigned col = vocab_size_; col < size; ++col) {
-        w_.push_back(std::make_shared<Eigen::MatrixXd>(wordvec_size_, 1));
-        ad::utils::RandomInit(*w_.back(), -1, 1);
+        w_.push_back(std::make_shared<Param>(wordvec_size_, 1, init));
     }
     vocab_size_ = size;
 }
@@ -66,7 +64,7 @@ Var Hashtable::MakeVarFor(ComputationGraph& g, size_t idx, bool learnable) const
     return g.CreateParam(w_[idx], learnable);
 }
 
-std::shared_ptr<Eigen::MatrixXd> Hashtable::Get(size_t idx) const {
+std::shared_ptr<Param> Hashtable::Get(size_t idx) const {
     return w_[idx];
 }
 

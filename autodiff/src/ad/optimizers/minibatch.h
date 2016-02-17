@@ -11,11 +11,11 @@ class Minibatch : public Optimizer {
         std::map<size_t, std::pair<int, Eigen::MatrixXd>> grad_mean_;
 
         std::pair<int, Eigen::MatrixXd>& SetCurrentGradient(Var v) {
-            auto grad = grad_mean_.find(v.id());
+            auto grad = grad_mean_.find(v.persistent_id());
             if (grad == grad_mean_.end()) {
                 grad = grad_mean_.insert(
                         std::make_pair(
-                            v.id(),
+                            v.persistent_id(),
                             std::make_pair(
                                 1,
                                 (1.0 / batch_size_) * v.derivative()
