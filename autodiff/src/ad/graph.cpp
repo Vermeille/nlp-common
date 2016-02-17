@@ -1,4 +1,5 @@
 #include "graph.h"
+#include "helpers.h"
 
 namespace ad {
 

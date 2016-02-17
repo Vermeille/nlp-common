@@ -23,6 +23,7 @@ add_library(ad
     ad/helpers.h
     ad/operators.h
     ad/hashtable.h
+    ad/trainers.h
     ad/nn/fullyconn.h
     ad/nn/rnn.h
     ad/nn/mrnn.h

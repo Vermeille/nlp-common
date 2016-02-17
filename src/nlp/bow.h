@@ -12,10 +12,8 @@
 class BagOfWords {
     ad::nn::Hashtable words_;
     size_t output_size_;
-
-    ad::Var ComputeModel(
-            ad::ComputationGraph& g,
-            const std::vector<WordFeatures>& ws) const;
+    ad::opt::Adagrad adagrad_;
+    ad::train::FeedForwardTrainer<ad::opt::Adagrad> trainer_;
 
   public:
     BagOfWords(size_t in_sz, size_t out_sz);
@@ -26,9 +24,16 @@ class BagOfWords {
     std::string Serialize() const;
     static BagOfWords FromSerialized(std::istream& file);
 
+    ad::Var Step(
+            ad::ComputationGraph& g,
+            const std::vector<WordFeatures>& ws) const;
+
+    ad::Var Cost(ad::ComputationGraph& g, ad::Var h, int output_class);
+
     Eigen::MatrixXd ComputeClass(const std::vector<WordFeatures>& ws) const;
 
-    int Train(const Document& doc);
+    double Train(const Document& doc);
+    double Test(const Document& doc);
 
     void ResizeInput(size_t in);
     void ResizeOutput(size_t out);
