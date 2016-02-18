@@ -25,7 +25,8 @@ struct RNNLayerParams {
     void ResizeOutput(int size, double init = 1) {
         utils::RandomExpandMatrix(whx_->value(), size, whx_->cols(), -init, init);
         utils::RandomExpandMatrix(whh_->value(), size, size, -init, init);
-        utils::RandomExpandMatrix(bh_->value(), size, init, -init, init);
+        utils::RandomExpandMatrix(bh_->value(), size, 1, -init, init);
+        utils::RandomExpandMatrix(h_->value(), size, 1, -init, init);
     }
 
     void Serialize(std::ostream& out) const;
