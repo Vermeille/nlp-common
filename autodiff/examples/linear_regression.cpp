@@ -23,27 +23,29 @@ int main() {
     using namespace ad;
     const int nb_examples = 1;
 
-    nn::FullyConnLayer fc(1, 2);
+    nn::FullyConnParams fc_params(1, 2);
+    ad::opt::Adagrad adagrad;
 
     for (int i = 0; i < 100; ++ i) {
         ComputationGraph g;
+        nn::FullyConnLayer fc(g, fc_params);
         auto dataset = GenDataset(nb_examples);
 
         Var x = g.CreateParam(dataset.first);
         Var y = g.CreateParam(dataset.second);
 
-        auto input = nn::InputLayer(x);
-        auto output = fc.Compute(input);
-        Var j = MSE(output.out, y) + 0.001 * nn::L2ForAllParams(output);
+        auto output = fc.Compute(x);
+        Var j = MSE(output, y) + 0.001 * nn::L2(g.GetAllLearnableVars());
 
         std::cout << "COST = " << j.value() << "\n";
 
         opt::SGD sgd(0.1 / nb_examples);
         g.BackpropFrom(j);
-        g.Update(sgd, *output.params);
+        g.Update(adagrad);
     }
 
-    std::cout << "w = " << fc.w() << "\nb = " << fc.b() << "\n";
+    std::cout << "w = " << fc_params.w_->value() << "\n"
+        "b = " << fc_params.b_->value() << "\n";
 
     return 0;
 }
