@@ -149,6 +149,40 @@ Var CrossEntropy(const Var& h, const Var& y) {
     return Sum(y ^ NLog(h));
 }
 
+static Eigen::MatrixXd Softmax(const Eigen::MatrixXd& x) {
+    Eigen::MatrixXd res(x.rows(), x.cols());
+    double* dst_ptr = res.data();
+    const double* src_ptr = x.data();
+    double total = 0;
+    for (int i = 0; i < res.size(); ++i) {
+        dst_ptr[i] = exp(src_ptr[i]);
+        total += dst_ptr[i];
+    }
+
+    for (int i = 0; i < res.size(); ++i) {
+        dst_ptr[i] /= total;
+    }
+    return res;
+}
+
+static void SoftmaxLossBackprop(Var& val, Var* lhs, Var* rhs) {
+    lhs->derivative() += val.derivative().cwiseProduct(
+            Softmax(lhs->value()) - rhs->value());
+}
+
+Var SoftmaxLoss(Var h, Var y) {
+    auto res = Softmax(h.value());
+
+    double* d = res.data();
+    double* dy = y.value().data();
+    for (size_t i = 0, len = res.size(); i < len; ++i) {
+        if (dy[i] != 0.0) {
+            d[i] = -dy[i] * log(d[i]);
+        }
+    }
+    return h.graph()->CreateNode(res, h, y, SoftmaxLossBackprop);
+}
+
 static void ExpBackprop(Var& val, Var* lhs, Var*) {
     double* da = lhs->derivative().data();
     const double* dx = val.derivative().data();
@@ -183,19 +217,8 @@ static void SoftmaxBackprop(Var& val, Var* lhs, Var*) {
 }
 
 Var Softmax(const Var& x) {
-    Eigen::MatrixXd res(x.value().rows(), x.value().cols());
-    double* dst_ptr = res.data();
-    const double* src_ptr = x.value().data();
-    double total = 0;
-    for (int i = 0; i < res.size(); ++i) {
-        dst_ptr[i] = exp(src_ptr[i]);
-        total += dst_ptr[i];
-    }
-
-    for (int i = 0; i < res.size(); ++i) {
-        dst_ptr[i] /= total;
-    }
-    return x.graph()->CreateNode(res, x, no_operand, SoftmaxBackprop);
+    return x.graph()->CreateNode(
+            Softmax(x.value()), x, no_operand, SoftmaxBackprop);
 }
 
 static void SigmoidBackprop(Var& val, Var* lhs, Var*) {
@@ -237,6 +260,10 @@ Var Mean(const Var& a) {
 }
 
 Var MSE(const Var& h, const Var& y) {
+    return Mean(EltSquare(h - y));
+}
+
+Var SSE(const Var& h, const Var& y) {
     return Sum(EltSquare(h - y));
 }
 
