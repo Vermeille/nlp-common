@@ -62,7 +62,19 @@ class LSTMLayer {
                 ComputationGraph& g,
                 const LSTMParams& params,
                 bool learnable = true);
+
         Var Step(Var in);
+
+        std::vector<Var> Params() const {
+            return {
+                wix_, wih_, bi_,
+                wfx_, wfh_, bf_,
+                wox_, woh_, bo_,
+                wcx_, wch_, bc_,
+                hidden_,
+                cell_
+            };
+        }
 };
 
 } // nn
