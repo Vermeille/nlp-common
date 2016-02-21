@@ -8,6 +8,8 @@ namespace ad {
 
 Var operator+(const Var& v1, const Var& v2);
 Var operator-(const Var& v1, const Var& v2);
+Var operator-(double a, const Var& v2);
+Var operator-(const Var& v1, double a);
 Var operator*(const Var& v1, const Var& v2);
 Var operator*(double a, const Var& v2);
 Var operator*(const Var& v1, double a);

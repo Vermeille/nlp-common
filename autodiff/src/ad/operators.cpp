@@ -169,9 +169,17 @@ Var Exp(const Var& x) {
 }
 
 static void SoftmaxBackprop(Var& val, Var* lhs, Var*) {
-    const Eigen::MatrixXd& a = val.value();
-    lhs->derivative() += val.derivative()
-        .cwiseProduct((a.array() * (1.0 - a.array())).matrix());
+    double* da = lhs->derivative().data();
+    const double* dx = val.derivative().data();
+    const double* a = val.value().data();
+    size_t len = val.value().size();
+    for (size_t i = 0; i < len; ++i) {
+        double d = 0;
+        for (size_t j = 0; j < len; ++j) {
+            d += a[i] * (((i == j) ? 1 : 0) - a[j]) * dx[j];
+        }
+        da[i] += d;
+    }
 }
 
 Var Softmax(const Var& x) {
@@ -190,6 +198,12 @@ Var Softmax(const Var& x) {
     return x.graph()->CreateNode(res, x, no_operand, SoftmaxBackprop);
 }
 
+static void SigmoidBackprop(Var& val, Var* lhs, Var*) {
+    const Eigen::MatrixXd& a = val.value();
+    lhs->derivative() += val.derivative()
+        .cwiseProduct((a.array() * (1.0 - a.array())).matrix());
+}
+
 Var Sigmoid(const Var& x) {
     Eigen::MatrixXd res(x.value().rows(), x.value().cols());
     double* dst_ptr = res.data();
@@ -198,8 +212,7 @@ Var Sigmoid(const Var& x) {
         dst_ptr[i] = 1.0 / (1 + exp(-src_ptr[i]));
     }
 
-    // Sigmoid derivative is the same as Softmax's
-    return x.graph()->CreateNode(res, x, no_operand, SoftmaxBackprop);
+    return x.graph()->CreateNode(res, x, no_operand, SigmoidBackprop);
 }
 
 static void SumBackprop(Var& val, Var* lhs, Var*) {
