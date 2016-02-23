@@ -16,7 +16,7 @@ struct RNNLayerParams {
     std::shared_ptr<Param> bh_;
     std::shared_ptr<Param> h_;
 
-    RNNLayerParams(int out_sz, int in_sz, double init = 1);
+    RNNLayerParams(int out_sz, int in_sz);
 
     void ResizeInput(int size, double init = 1) {
         utils::RandomExpandMatrix(whx_->value(), whx_->rows(), size, -init, init);

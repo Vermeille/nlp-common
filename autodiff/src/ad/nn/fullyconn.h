@@ -11,7 +11,7 @@ struct FullyConnParams {
     std::shared_ptr<Param> w_;
     std::shared_ptr<Param> b_;
 
-    FullyConnParams(int out_sz, int in_sz, double init = 1);
+    FullyConnParams(int out_sz, int in_sz);
 
     void ResizeOutput(int size, double init = 1);
     void ResizeInput(int size, double init = 1);

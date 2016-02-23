@@ -6,10 +6,10 @@
 namespace ad {
 namespace nn {
 
-HighwayLayerParams::HighwayLayerParams(size_t sz, double init)
-        : w_(std::make_shared<Param>(sz, sz, init)),
-        wt_(std::make_shared<Param>(sz, sz, init)),
-        wc_(std::make_shared<Param>(sz, sz, init)) {
+HighwayLayerParams::HighwayLayerParams(size_t sz)
+        : w_(std::make_shared<Param>(sz, sz, Xavier())),
+        wt_(std::make_shared<Param>(sz, sz, Xavier())),
+        wc_(std::make_shared<Param>(sz, sz, Xavier())) {
 }
 
 void HighwayLayerParams::Resize(size_t sz, double init) {

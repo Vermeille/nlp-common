@@ -8,15 +8,15 @@
 namespace ad {
 namespace nn {
 
-DiscreteMRNNParams::DiscreteMRNNParams(int out_sz, size_t in_sz, double init) :
-        bh_(std::make_shared<Param>(out_sz, 1)),
-        h_(std::make_shared<Param>(out_sz, 1)) {
+DiscreteMRNNParams::DiscreteMRNNParams(int out_sz, size_t in_sz) :
+        bh_(std::make_shared<Param>(out_sz, 1, Constant(0))),
+        h_(std::make_shared<Param>(out_sz, 1, Gaussian(0, 0.01))) {
     for (size_t i = 0; i < in_sz; ++i) {
-        whx_.push_back(std::make_shared<Param>(out_sz, 1, init));
+        whx_.push_back(std::make_shared<Param>(out_sz, 1, Xavier()));
     }
 
     for (size_t i = 0; i < in_sz; ++i) {
-        whh_.push_back(std::make_shared<Param>(out_sz, out_sz, init));
+        whh_.push_back(std::make_shared<Param>(out_sz, out_sz, Xavier()));
     }
     h_->value().setZero();
 }
@@ -24,10 +24,10 @@ DiscreteMRNNParams::DiscreteMRNNParams(int out_sz, size_t in_sz, double init) :
 void DiscreteMRNNParams::ResizeInput(size_t size, double init) {
     size_t out_sz = bh_->rows();
     while (whx_.size() < size) {
-        whx_.push_back(std::make_shared<Param>(out_sz, 1, init));
+        whx_.push_back(std::make_shared<Param>(out_sz, 1, Xavier()));
     }
     while (whh_.size() < size) {
-        whh_.push_back(std::make_shared<Param>(out_sz, out_sz, init));
+        whh_.push_back(std::make_shared<Param>(out_sz, out_sz, Xavier()));
     }
 }
 

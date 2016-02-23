@@ -33,7 +33,7 @@ struct LSTMParams {
     void ResizeInput(size_t in, double init = 1);
     void ResizeOutput(size_t out, double init = 1);
 
-    LSTMParams(size_t output_size, size_t input_size, double init = 1);
+    LSTMParams(size_t output_size, size_t input_size);
 };
 
 class LSTMLayer {

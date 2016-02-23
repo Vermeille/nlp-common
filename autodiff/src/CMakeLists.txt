@@ -10,6 +10,7 @@ add_library(ad
     ad/helpers.cpp
     ad/operators.cpp
     ad/hashtable.cpp
+    ad/initializers.cpp
     ad/nn/fullyconn.cpp
     ad/nn/rnn.cpp
     ad/nn/mrnn.cpp
@@ -24,6 +25,7 @@ add_library(ad
     ad/operators.h
     ad/hashtable.h
     ad/trainers.h
+    ad/initializers.h
     ad/nn/fullyconn.h
     ad/nn/rnn.h
     ad/nn/mrnn.h

@@ -2,6 +2,7 @@
 
 #include <cstdlib>
 #include <cassert>
+#include <random>
 
 namespace ad {
 namespace utils {
@@ -11,24 +12,18 @@ double RandomRange(float from, float to) {
     return ((double)rand() / ((double)RAND_MAX + 1) * distance) + from;
 }
 
-void RandomInit(Eigen::MatrixXd& mat, float from, float to) {
-    for (int i = 0; i < mat.rows(); ++i) {
-        for (int j = 0; j < mat.cols(); ++j) {
-            mat(i, j) = RandomRange(from, to);
-        }
-    }
-}
-
 void RandomExpandMatrix(Eigen::MatrixXd& mat, int rows, int cols,
         float from, float to) {
     int old_rows = mat.rows();
     int old_cols = mat.cols();
     mat.conservativeResize(rows, cols);
+    std::default_random_engine generator;
+    std::normal_distribution<double> gaussian(0, 2.0 / (mat.rows() + mat.cols()));
 
     if (cols > old_cols) {
         for (int i = 0; i < rows; ++i) {
             for (int j = old_cols; j < cols; ++j) {
-                mat(i, j) = RandomRange(from, to);
+                mat(i, j) = gaussian(generator);
             }
         }
     }
@@ -36,7 +31,7 @@ void RandomExpandMatrix(Eigen::MatrixXd& mat, int rows, int cols,
     if (rows > old_rows) {
         for (int i = old_rows; i < rows; ++i) {
             for (int j = 0; j < cols; ++j) {
-                mat(i, j) = RandomRange(from, to);
+                mat(i, j) = gaussian(generator);
             }
         }
     }

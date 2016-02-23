@@ -9,10 +9,10 @@ void DoNothingBackprop(Var&, Var*, Var*) {}
 
 size_t Param::next_id_;
 
-Param::Param(size_t rows, size_t cols, double init)
+Param::Param(size_t rows, size_t cols, const MatrixInitialization& init)
     : value_(rows, cols),
     persistent_id_(0) {
-        ad::utils::RandomInit(value_, -init, init);
+        init.Init(value_);
 }
 Var ComputationGraph::CreateParam(
         std::shared_ptr<Param> val, bool learnable) {

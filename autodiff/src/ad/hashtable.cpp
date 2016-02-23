@@ -6,7 +6,10 @@
 namespace ad {
 namespace nn {
 
-Hashtable::Hashtable(size_t wordvec_size, size_t vocab_size, double init)
+Hashtable::Hashtable(
+        size_t wordvec_size,
+        size_t vocab_size,
+        const MatrixInitialization& init)
         : wordvec_size_(wordvec_size),
         vocab_size_(vocab_size) {
     w_.reserve(vocab_size);
@@ -55,7 +58,7 @@ void Hashtable::ResizeVectors(size_t size, double init) {
 
 void Hashtable::ResizeVocab(size_t size, double init) {
     for (unsigned col = vocab_size_; col < size; ++col) {
-        w_.push_back(std::make_shared<Param>(wordvec_size_, 1, init));
+        w_.push_back(std::make_shared<Param>(wordvec_size_, 1));
     }
     vocab_size_ = size;
 }

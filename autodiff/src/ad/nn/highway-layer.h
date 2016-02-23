@@ -16,7 +16,7 @@ struct HighwayLayerParams {
     std::shared_ptr<Param> wt_;
     std::shared_ptr<Param> wc_;
 
-    HighwayLayerParams(size_t sz, double init = 1);
+    HighwayLayerParams(size_t sz);
     void Resize(size_t in, double init = 1);
 };
 

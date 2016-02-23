@@ -6,25 +6,25 @@
 namespace ad {
 namespace nn {
 
-LSTMParams::LSTMParams(size_t output_size, size_t input_size, double init)
-    : wix_(std::make_shared<Param>(output_size, input_size, init)),
-    wih_(std::make_shared<Param>(output_size, output_size, init)),
-    bi_(std::make_shared<Param>(output_size, 1, init)),
+LSTMParams::LSTMParams(size_t output_size, size_t input_size)
+    : wix_(std::make_shared<Param>(output_size, input_size, Xavier())),
+    wih_(std::make_shared<Param>(output_size, output_size, Xavier())),
+    bi_(std::make_shared<Param>(output_size, 1, Constant(0))),
 
-    wfx_(std::make_shared<Param>(output_size, input_size, init)),
-    wfh_(std::make_shared<Param>(output_size, output_size, init)),
-    bf_(std::make_shared<Param>(output_size, 1, init)),
+    wfx_(std::make_shared<Param>(output_size, input_size, Xavier())),
+    wfh_(std::make_shared<Param>(output_size, output_size, Xavier())),
+    bf_(std::make_shared<Param>(output_size, 1, Constant(5))),
 
-    wox_(std::make_shared<Param>(output_size, input_size, init)),
-    woh_(std::make_shared<Param>(output_size, output_size, init)),
-    bo_(std::make_shared<Param>(output_size, 1, init)),
+    wox_(std::make_shared<Param>(output_size, input_size, Xavier())),
+    woh_(std::make_shared<Param>(output_size, output_size, Xavier())),
+    bo_(std::make_shared<Param>(output_size, 1, Constant(0))),
 
-    wcx_(std::make_shared<Param>(output_size, input_size, init)),
-    wch_(std::make_shared<Param>(output_size, output_size, init)),
-    bc_(std::make_shared<Param>(output_size, 1, init)),
+    wcx_(std::make_shared<Param>(output_size, input_size, Xavier())),
+    wch_(std::make_shared<Param>(output_size, output_size, Xavier())),
+    bc_(std::make_shared<Param>(output_size, 1, Constant(0))),
 
-    cell_(std::make_shared<Param>(output_size, 1, init)),
-    hidden_(std::make_shared<Param>(output_size, 1, init)) {
+    cell_(std::make_shared<Param>(output_size, 1, Gaussian(0, 0.1))),
+    hidden_(std::make_shared<Param>(output_size, 1, Gaussian(0, 0.1))) {
 }
 
 

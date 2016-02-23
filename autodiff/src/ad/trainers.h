@@ -54,7 +54,7 @@ class WholeSequenceTaggerTrainer {
 
             Var J = model.Cost(g, predicted, expected);
 
-            g.BackpropFrom(J);
+            g.BackpropFrom(J, 10);
             g.Update(updater_);
 
             return J.value()(0, 0);
@@ -89,7 +89,7 @@ class IterativeSequenceTaggerTrainer {
                 Var J = model.Cost(g, h, expected[last]);
 
                 nll += J.value()(0, 0);
-                g.BackpropFrom(J);
+                g.BackpropFrom(J, 5);
                 g.Update(updater_);
             }
 

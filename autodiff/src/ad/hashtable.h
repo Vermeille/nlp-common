@@ -19,7 +19,10 @@ class Hashtable {
         size_t vocab_size_;
 
     public:
-        Hashtable(size_t wordvec_size, size_t vocab_size, double init = 1);
+        Hashtable(
+                size_t wordvec_size,
+                size_t vocab_size,
+                const MatrixInitialization& init = Xavier());
 
         std::string Serialize() const;
         static Hashtable FromSerialized(std::istream& in);

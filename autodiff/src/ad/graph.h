@@ -6,6 +6,7 @@
 #include <set>
 
 #include "optimizer.h"
+#include "initializers.h"
 
 #include "Eigen/Dense"
 
@@ -23,7 +24,8 @@ class Param {
         mutable size_t persistent_id_;
         static size_t next_id_;
     public:
-        Param(size_t rows, size_t cols, double init = 1);
+        Param(size_t rows, size_t cols,
+                const MatrixInitialization& init = Xavier());
         Param(const Eigen::MatrixXd& val) : value_(val), persistent_id_(0) { }
         const Eigen::MatrixXd& value() const { return value_; }
         Eigen::MatrixXd& value() { return value_; }

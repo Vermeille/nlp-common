@@ -16,7 +16,7 @@ struct DiscreteMRNNParams {
     std::shared_ptr<Param> bh_;
     std::shared_ptr<Param> h_;
 
-    DiscreteMRNNParams(int out_sz, size_t in_sz, double init = 1);
+    DiscreteMRNNParams(int out_sz, size_t in_sz);
 
     void ResizeInput(size_t size, double init = 1);
     void ResizeOutput(size_t size, double init = 1);

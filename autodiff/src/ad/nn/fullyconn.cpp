@@ -6,9 +6,9 @@
 namespace ad {
 namespace nn {
 
-FullyConnParams::FullyConnParams(int out_sz, int in_sz, double init) :
-    w_(std::make_shared<Param>(out_sz, in_sz, init)),
-    b_(std::make_shared<Param>(out_sz, 1, init)) {
+FullyConnParams::FullyConnParams(int out_sz, int in_sz) :
+    w_(std::make_shared<Param>(out_sz, in_sz, Xavier())),
+    b_(std::make_shared<Param>(out_sz, 1, Constant(0))) {
 }
 
 FullyConnLayer::FullyConnLayer(

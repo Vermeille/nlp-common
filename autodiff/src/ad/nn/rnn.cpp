@@ -8,11 +8,11 @@
 namespace ad {
 namespace nn {
 
-RNNLayerParams::RNNLayerParams(int out_sz, int in_sz, double init) :
-        whx_(std::make_shared<Param>(out_sz, in_sz, init)),
-        whh_(std::make_shared<Param>(out_sz, out_sz, init)),
-        bh_(std::make_shared<Param>(out_sz, 1, init)),
-        h_(std::make_shared<Param>(out_sz, 1, init)) {
+RNNLayerParams::RNNLayerParams(int out_sz, int in_sz) :
+        whx_(std::make_shared<Param>(out_sz, in_sz, Xavier())),
+        whh_(std::make_shared<Param>(out_sz, out_sz, Xavier())),
+        bh_(std::make_shared<Param>(out_sz, 1, Constant(0))),
+        h_(std::make_shared<Param>(out_sz, 1, Gaussian(0, 0.1))) {
 }
 
 RNNLayer::RNNLayer(
