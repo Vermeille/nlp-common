@@ -93,7 +93,7 @@ DiscreteMRNNLayer::DiscreteMRNNLayer(
 Var DiscreteMRNNLayer::Step(int x) {
     used_vars_.push_back(whx_[x]);
     used_vars_.push_back(whh_[x]);
-    return h_ = Sigmoid(whx_[x] + whh_[x] * h_ + bh_);
+    return h_ = Tanh(whx_[x] + whh_[x] * h_ + bh_);
 }
 
 std::vector<Var> DiscreteMRNNLayer::Params() const {

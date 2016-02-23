@@ -26,7 +26,7 @@ RNNLayer::RNNLayer(
 }
 
 Var RNNLayer::Step(Var x) {
-    return h_ = Sigmoid(whx_ * x + whh_ * h_ + bh_);
+    return h_ = Tanh(whx_ * x + whh_ * h_ + bh_);
 }
 
 void RNNLayerParams::Serialize(std::ostream& out) const {
