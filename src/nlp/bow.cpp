@@ -27,40 +27,47 @@ ad::Var BagOfWords::Step(
         sum = sum + words_.MakeVarFor(g, ws[i].idx);
     }
 
-    return Softmax(sum);
+    return sum;
 }
 
 Eigen::MatrixXd BagOfWords::ComputeClass(const std::vector<WordFeatures>& ws) const {
     ad::ComputationGraph g;
-    return ComputeModel(g, ws).value();
+    return ad::Softmax(Step(g, ws)).value();
 }
 
-int BagOfWords::Train(const Document& doc) {
+double BagOfWords::Test(const Document& doc) {
     double nll = 0;
     int nb_correct = 0;
     int nb_tokens = 0;
 
     for (auto& ex : doc.examples) {
-        using namespace ad;
+        ad::ComputationGraph g;
+        auto h = Step(g, ex.inputs);
 
-        ComputationGraph g;
-        Var y = g.CreateParam(utils::OneHotColumnVector(ex.output, output_size_));
-
-        auto h = ComputeModel(g, ex.inputs);
-
-        Var J = ad::CrossEntropy(y, h);
-
-        opt::SGD sgd(0.1);
-        g.BackpropFrom(J, 5);
-        g.Update(sgd);
-
-        Label predicted = utils::OneHotVectorDecode(h.value());
+        Label predicted = ad::utils::OneHotVectorDecode(h.value());
         nb_correct += predicted == ex.output ? 1 : 0;
         ++nb_tokens;
-
-        nll += J.value()(0, 0);
     }
-    return  nb_correct * 100 / nb_tokens;
+    return nb_correct * 100 / nb_tokens;
+}
+
+double BagOfWords::Train(const Document& doc) {
+    double nll = 0;
+    for (auto& ex : doc.examples) {
+        nll += trainer_.Step(ex.inputs, ex.output,
+                [&](ad::ComputationGraph&) {
+                    return *this;
+                });
+    }
+    std::cout << "nll: " << nll << "\n";
+    return Test(doc);
+}
+
+ad::Var BagOfWords::Cost(ad::ComputationGraph& g, ad::Var h, int output_class) {
+    using namespace ad;
+    Var y = g.CreateParam(utils::OneHotColumnVector(output_class, output_size_));
+    return ad::Mean(ad::SoftmaxLoss(h, y))
+        + 1e-4 * ad::nn::L2(g.GetAllLearnableVars());
 }
 
 std::string BagOfWords::Serialize() const {
@@ -83,6 +90,6 @@ void BagOfWords::ResizeOutput(size_t out) {
 }
 
 double BagOfWords::weights(size_t label, size_t word) const {
-    return (*words_.Get(word))(label, 0);
+    return words_.Get(word)->value()(label, 0);
 }
 

@@ -32,15 +32,13 @@ int main(int argc, char** argv) {
     }
 
     NGramMaker ngram;
-    BagOfWords bow(200, 2);
     LabelSet ls;
     Document doc = Parse(argv[1], ngram, ls);
 
-    bow.ResizeInput(ngram.dict().size());
-    bow.ResizeOutput(ls.size());
+    BagOfWords bow(ngram.dict().size(), ls.size());
 
     std::cout << "Training...\n";
-    for (int i = 0; i < 10; ++i) {
+    for (int i = 0; i < 5; ++i) {
         std::cout << bow.Train(doc) << "% accuracy" << std::endl;
     }
 
