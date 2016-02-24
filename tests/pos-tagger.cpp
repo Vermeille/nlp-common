@@ -36,7 +36,7 @@ Document Parse(const std::string& str, NGramMaker& ngram, LabelSet& ls) {
     return doc;
 }
 
-void InteractiveShell(SequenceTagger& tagger, NGramMaker& ngram, LabelSet& ls) {
+void InteractiveShell(SequenceTaggerParams& tagger, NGramMaker& ngram, LabelSet& ls) {
     char* line;
     while ((line = readline("> "))) {
         add_history(line);
@@ -57,11 +57,9 @@ void InteractiveShell(SequenceTagger& tagger, NGramMaker& ngram, LabelSet& ls) {
 void Train(const std::string& dataset, const std::string& model) {
     NGramMaker ngram;
     LabelSet ls;
-    SequenceTagger tagger(200, 2);
     Document doc = Parse(dataset, ngram, ls);
 
-    tagger.ResizeInput(ngram.dict().size());
-    tagger.ResizeOutput(ls.size());
+    SequenceTaggerParams tagger(ngram.dict().size(), ls.size());
 
     std::cout << "Training...\n";
     for (int i = 0; i < 5; ++i) {
@@ -82,7 +80,7 @@ void Interactive(const std::string& model) {
     std::cout.flush();
     NGramMaker ngram = NGramMaker::FromSerialized(in);
     LabelSet ls = LabelSet::FromSerialized(in);
-    SequenceTagger tagger = SequenceTagger::FromSerialized(in);
+    SequenceTaggerParams tagger = SequenceTaggerParams::FromSerialized(in);
     std::cout << "done\n";
 
     InteractiveShell(tagger, ngram, ls);
