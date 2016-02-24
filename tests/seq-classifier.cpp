@@ -7,7 +7,6 @@
 
 #include <nlp/dict.h>
 #include <nlp/tokenizer.h>
-#include <nlp/bow.h>
 #include <nlp/sequence-classifier.h>
 
 Document Parse(const std::string& str, NGramMaker& ngram, LabelSet& ls) {

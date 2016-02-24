@@ -45,7 +45,7 @@ struct Uniform : public MatrixInitialization {
 
 struct Xavier : public MatrixInitialization {
     virtual void Init(Eigen::MatrixXd& mat) const {
-        Uniform uni(0, 2.0 / (mat.rows() + mat.cols()));
+        Uniform uni(0, 2.0 / sqrt(mat.rows() + mat.cols()));
         uni.Init(mat);
     }
 };
