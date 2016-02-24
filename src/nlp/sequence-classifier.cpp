@@ -5,33 +5,50 @@
 
 SequenceClassifier::SequenceClassifier(
         size_t out_sz, size_t hidden_size, size_t wordvec_size, size_t vocab_size)
-    : words_(wordvec_size, vocab_size),
-    encoder_(hidden_size, wordvec_size),
-    decoder_(out_sz, hidden_size),
+    : words(wordvec_size, vocab_size),
+    encoder(hidden_size, wordvec_size),
+    decoder(out_sz, hidden_size),
     output_size_(out_sz) {
 }
 
-ad::Var SequenceClassifier::ComputeModel(
+ad::Var SequenceClassifierGraph::Step(
         ad::ComputationGraph& g,
-        const std::vector<WordFeatures>& ws) const {
+        const std::vector<WordFeatures>& ws) {
     using namespace ad;
-    nn::RNNLayer encoder(g, encoder_);
-    nn::FullyConnLayer decoder(g, decoder_);
-
     Var encoded(nullptr);
     for (auto& w : ws) {
-        encoded = encoder.Step(words_.MakeVarFor(g, w.idx));
+        encoded = encoder_.Step(words_.MakeVarFor(g, w.idx));
     }
-    return ad::Softmax(decoder.Compute(encoded));
+    return ad::Softmax(decoder_.Compute(encoded));
 }
 
 Eigen::MatrixXd SequenceClassifier::ComputeClass(
         const std::vector<WordFeatures>& ws) const {
     ad::ComputationGraph g;
-    return ComputeModel(g, ws).value();
+    SequenceClassifierGraph graph(g, *this, input_size_, output_size_);
+    return graph.Step(g, ws).value();
 }
 
 double SequenceClassifier::Train(const Document& doc) {
+    for (auto& ex : doc.examples) {
+        if (ex.inputs.empty()) {
+            continue;
+        }
+
+        using namespace ad;
+        ad::train::FeedForwardTrainer<ad::opt::Adagrad>
+            trainer((ad::opt::Adagrad(0.1)));
+
+        trainer.Step(ex.inputs, ex.output,
+                [&](ad::ComputationGraph& g) {
+                    return SequenceClassifierGraph(g, *this, input_size_, output_size_);
+                });
+    }
+
+    return Test(doc);
+}
+
+double SequenceClassifier::Test(const Document& doc) {
     int nb_corrects = 0;
 
     for (auto& ex : doc.examples) {
@@ -40,41 +57,31 @@ double SequenceClassifier::Train(const Document& doc) {
         }
 
         using namespace ad;
-        ComputationGraph g;
+        ad::ComputationGraph g;
+        SequenceClassifierGraph seq(g, *this, input_size_, output_size_);
 
-        Eigen::MatrixXd y_mat
-            = utils::OneHotColumnVector(ex.output, output_size_);
-
-        Var y = g.CreateParam(y_mat);
-        auto h = ComputeModel(g, ex.inputs);
-        Var J = ad::MSE(y, h);
-
-        opt::SGD sgd(0.1);
-        g.BackpropFrom(J, 5);
-        g.Update(sgd);
-
+        Var h = seq.Step(g, ex.inputs);
         Label predicted = utils::OneHotVectorDecode(h.value());
         nb_corrects += predicted == ex.output ? 1 : 0;
     }
 
     return 100.0 * nb_corrects / doc.examples.size();
 }
-
 void SequenceClassifier::ResizeInput(size_t in) {
-    words_.ResizeVocab(in);
+    words.ResizeVocab(in);
 }
 
 void SequenceClassifier::ResizeOutput(size_t out) {
-    decoder_.ResizeOutput(out);
+    decoder.ResizeOutput(out);
     output_size_ = out;
 }
 
 std::string SequenceClassifier::Serialize() const {
     std::ostringstream oss;
     oss << "SEQUENCE-CLASSIFIER\n";
-    oss << words_.Serialize();
-    encoder_.Serialize(oss);
-    decoder_.Serialize(oss);
+    oss << words.Serialize();
+    encoder.Serialize(oss);
+    decoder.Serialize(oss);
     return oss.str();
 }
 
@@ -85,9 +92,9 @@ SequenceClassifier SequenceClassifier::FromSerialized(std::istream& file) {
         throw std::runtime_error("Magic is not SEQUENCE-CLASSIFIER");
     }
     SequenceClassifier seq(0, 0, 0, 0);
-    seq.words_ = decltype (seq.words_)::FromSerialized(file);
-    seq.encoder_ = decltype (seq.encoder_)::FromSerialized(file);
-    seq.decoder_ = decltype (seq.decoder_)::FromSerialized(file);
+    seq.words = decltype (seq.words)::FromSerialized(file);
+    seq.encoder = decltype (seq.encoder)::FromSerialized(file);
+    seq.decoder = decltype (seq.decoder)::FromSerialized(file);
     return seq;
 }
 
