@@ -29,13 +29,13 @@ class FeedForwardTrainer {
         }
 };
 
-template <class Updater>
 class WholeSequenceTaggerTrainer {
     private:
-        Updater updater_;
+        std::unique_ptr<Optimizer> updater_;
 
     public:
-        WholeSequenceTaggerTrainer(const Updater& updater)
+        template <class Updater>
+        WholeSequenceTaggerTrainer(Updater* updater)
             : updater_(updater) {
         }
 
@@ -55,19 +55,19 @@ class WholeSequenceTaggerTrainer {
             Var J = model.Cost(g, predicted, expected);
 
             g.BackpropFrom(J, 5);
-            g.Update(updater_);
+            g.Update(*updater_);
 
             return J.value()(0, 0);
         }
 };
 
-template <class Updater>
 class IterativeSequenceTaggerTrainer {
     private:
-        Updater updater_;
+        std::unique_ptr<Optimizer> updater_;
 
     public:
-        IterativeSequenceTaggerTrainer(const Updater& updater)
+        template <class Updater>
+        IterativeSequenceTaggerTrainer(Updater* updater)
             : updater_(updater) {
         }
 
@@ -90,7 +90,7 @@ class IterativeSequenceTaggerTrainer {
 
                 nll += J.value()(0, 0);
                 g.BackpropFrom(J, 5);
-                g.Update(updater_);
+                g.Update(*updater_);
             }
 
             return nll / input.size();
