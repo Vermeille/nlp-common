@@ -40,6 +40,7 @@ class DiscreteMRNNLayer {
                 const DiscreteMRNNParams& params,
                 bool learnable = true);
 
+        void SetHidden(Var h) { h_ = h; }
         Var Step(int x);
         std::vector<Var> Params() const;
 };
