@@ -18,7 +18,7 @@ size_t Dictionnary::GetWordId(const std::string& w) {
     return id;
 }
 
-size_t Dictionnary::GetWordIdOrUnk(const std::string& w) {
+size_t Dictionnary::GetWordIdOrUnk(const std::string& w) const {
     auto res = dict_.left.find(w);
     if (res == dict_.left.end()) {
         return unk_id_;

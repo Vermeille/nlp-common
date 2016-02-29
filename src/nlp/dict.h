@@ -10,14 +10,14 @@
 class Dictionnary {
     boost::bimap<std::string, size_t> dict_;
     mutable std::vector<size_t> stats_;
-    size_t max_freq_;
+    mutable size_t max_freq_;
     size_t unk_id_;
 
   public:
     Dictionnary();
     bool IsInVocab(const std::string& w) { return dict_.left.find(w) != dict_.left.end(); }
     size_t GetWordId(const std::string& w);
-    size_t GetWordIdOrUnk(const std::string& w);
+    size_t GetWordIdOrUnk(const std::string& w) const;
     size_t size() const { return dict_.size(); }
     std::string Serialize() const;
     static Dictionnary FromSerialized(std::istream& in);
