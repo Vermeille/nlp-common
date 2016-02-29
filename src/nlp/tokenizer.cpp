@@ -1,6 +1,7 @@
 #include <locale>
 #include <iostream>
 #include <string>
+#include <cctype>
 
 #include "tokenizer.h"
 #include "utils.h"
@@ -44,9 +45,12 @@ std::vector<WordFeatures> Tokenizer::FR(const std::string& str) {
 }
 
 std::vector<WordFeatures> Tokenizer::CharLevel(const std::wstring& str) {
+    std::locale fr("fr_FR.UTF-8");
     std::vector<WordFeatures> sentence;
     for (auto c : str) {
-        sentence.push_back(std::wstring() + c);
+        if (isascii(c) || isalnum(c, fr)) {
+            sentence.push_back(std::wstring() + c);
+        }
     }
     return sentence;
 }
