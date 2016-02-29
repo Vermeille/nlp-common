@@ -23,19 +23,19 @@ Var operator-(const Var& v1, const Var& v2) {
 }
 
 Var operator-(double a, const Var& v1) {
-    Eigen::MatrixXd coeff(1, 1);
-    coeff << a;
+    Eigen::MatrixXd coeff(v1.value().rows(), v1.value().cols());
+    coeff.setConstant(a);
     Var coeff_var = v1.graph()->CreateParam(coeff);
     return v1.graph()->CreateNode(
-            v1.value().array() - a, v1, coeff_var, SubBackprop);
+            a - v1.value().array(), coeff_var, v1, SubBackprop);
 }
 
 Var operator-(const Var& v1, double a) {
-    Eigen::MatrixXd coeff(1, 1);
-    coeff << a;
+    Eigen::MatrixXd coeff(v1.value().rows(), v1.value().cols());
+    coeff.setConstant(a);
     Var coeff_var = v1.graph()->CreateParam(coeff);
     return v1.graph()->CreateNode(
-            a - v1.value().array(), v1, coeff_var, SubBackprop);
+            v1.value().array() - a, v1, coeff_var, SubBackprop);
 }
 
 static void MulBackprop(Var& val, Var* lhs, Var* rhs) {
