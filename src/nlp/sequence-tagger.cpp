@@ -46,8 +46,7 @@ double SequenceTaggerParams::Test(const Document& doc) {
 double SequenceTaggerParams::Train(const Document& doc) {
     using namespace ad;
 
-    train::IterativeSequenceTaggerTrainer<ad::opt::Adagrad>
-        trainer((ad::opt::Adagrad()));
+    train::IterativeSequenceTaggerTrainer trainer(new ad::opt::Adagrad());
     for (auto& ex : doc.examples) {
         trainer.Step(ex.inputs, ex.inputs,
                 [&](ad::ComputationGraph& g) {
