@@ -50,4 +50,10 @@ struct Xavier : public MatrixInitialization {
     }
 };
 
+struct Identity : public MatrixInitialization {
+    virtual void Init(Eigen::MatrixXd& mat) const {
+        mat.setIdentity();
+    }
+};
+
 } // ad
