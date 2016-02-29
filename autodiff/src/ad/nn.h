@@ -14,6 +14,7 @@
 #include "nn/rnn.h"
 #include "nn/mrnn.h"
 #include "nn/lstm.h"
+#include "nn/scrn.h"
 
 namespace ad {
 namespace nn {

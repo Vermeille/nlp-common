@@ -31,6 +31,7 @@ add_library(ad
     ad/nn/rnn.h
     ad/nn/mrnn.h
     ad/nn/lstm.h
+    ad/nn/scrn.h
     ad/nn/highway-layer.h
     ad/optimizer.h
     ad/optimizers/sgd.h
