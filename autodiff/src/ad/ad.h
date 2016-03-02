@@ -7,6 +7,7 @@
 #include "optimizer.h"
 #include "optimizers/sgd.h"
 #include "optimizers/adagrad.h"
+#include "optimizers/adadelta.h"
 #include "optimizers/minibatch.h"
 #include "optimizers/momentum.h"
 #include "trainers.h"
