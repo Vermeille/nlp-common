@@ -6,6 +6,7 @@
 #include "operators.h"
 #include "optimizer.h"
 #include "optimizers/sgd.h"
+#include "optimizers/adam.h"
 #include "optimizers/adagrad.h"
 #include "optimizers/adadelta.h"
 #include "optimizers/minibatch.h"

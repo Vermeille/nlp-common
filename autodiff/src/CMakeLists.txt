@@ -16,6 +16,7 @@ add_library(ad
     ad/nn/mrnn.cpp
     ad/nn/lstm.cpp
     ad/nn/highway-layer.cpp
+    ad/optimizers/adam.cpp
     ad/optimizers/adagrad.cpp
     ad/optimizers/adadelta.cpp
     ad/optimizers/momentum.cpp
@@ -36,6 +37,7 @@ add_library(ad
     ad/nn/highway-layer.h
     ad/optimizer.h
     ad/optimizers/sgd.h
+    ad/optimizers/adam.h
     ad/optimizers/adagrad.h
     ad/optimizers/adadelta.h
     ad/optimizers/momentum.h
