@@ -41,9 +41,17 @@ Var ComputationGraph::CreateNode(
 
 static void Clip(Eigen::MatrixXd& mat, double clip) {
     double* data = mat.data();
+    double norm = 0;
     for (int i = 0; i < mat.size(); ++i) {
-        data[i] = data[i] > clip ? clip : data[i];
-        data[i] = data[i] < -clip ? -clip : data[i];
+        norm += data[i] * data[i];
+    }
+    norm = sqrt(norm);
+    if (norm < clip) {
+        return;
+    }
+
+    for (int i = 0; i < mat.size(); ++i) {
+        data[i] = clip * data[i] / norm;
     }
 }
 
