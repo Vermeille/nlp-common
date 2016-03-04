@@ -43,12 +43,22 @@ static void MulBackprop(Var& val, Var* lhs, Var* rhs) {
     rhs->derivative() +=  lhs->value().transpose() * val.derivative();
 }
 
-Var operator*(const Var& v1, const Var& v2) {
-    return v1.graph()->CreateNode(v1.value() * v2.value(), v1, v2, MulBackprop);
-}
-
 static void CoeffMulBackprop(Var& val, Var* lhs, Var* rhs) {
     lhs->derivative() +=  val.derivative() * rhs->value()(0, 0);
+    rhs->derivatuve() += val.derivative().transpose() * lhs->value();
+}
+
+Var operator*(const Var& v1, const Var& v2) {
+    if (v2.value().rows() == 1 && v2.value().cols() == 1) {
+        return v2 * v1;
+    }
+
+    if (v1.value().rows() == 1 && v1.value().cols() == 1) {
+        return v1.graph()->CreateNode(
+                v2.value() * v1.value()(0, 0), v2, v1, CoeffMulBackprop);
+    }
+
+    return v1.graph()->CreateNode(v1.value() * v2.value(), v1, v2, MulBackprop);
 }
 
 Var operator*(double a, const Var& v1) {
