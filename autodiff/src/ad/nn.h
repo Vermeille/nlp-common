@@ -12,6 +12,7 @@
 
 #include "nn/fullyconn.h"
 #include "nn/rnn.h"
+#include "nn/gru.h"
 #include "nn/mrnn.h"
 #include "nn/lstm.h"
 #include "nn/scrn.h"

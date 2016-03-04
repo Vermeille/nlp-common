@@ -64,6 +64,8 @@ class LSTMLayer {
                 bool learnable = true);
 
         Var Step(Var in);
+        void SetHidden(Var h) { hidden_ = h; }
+        Var GetHidden() const { return hidden_; }
 
         std::vector<Var> Params() const {
             return {

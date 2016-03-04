@@ -47,6 +47,8 @@ class RNNLayer {
                 bool learnable = true);
 
         Var Step(Var in);
+        void SetHidden(Var h) { h_ = h; }
+        Var GetHidden() const { return h_; }
 };
 
 

@@ -12,6 +12,7 @@ add_library(ad
     ad/hashtable.cpp
     ad/initializers.cpp
     ad/nn/fullyconn.cpp
+    ad/nn/gru.cpp
     ad/nn/rnn.cpp
     ad/nn/mrnn.cpp
     ad/nn/lstm.cpp
@@ -31,6 +32,7 @@ add_library(ad
     ad/initializers.h
     ad/nn/fullyconn.h
     ad/nn/rnn.h
+    ad/nn/gru.h
     ad/nn/mrnn.h
     ad/nn/lstm.h
     ad/nn/scrn.h
