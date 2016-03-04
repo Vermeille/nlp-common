@@ -331,4 +331,24 @@ Var ColAppend(Var x, Var y) {
     return x.graph()->CreateNode(cated, x, y, ColAppendBackprop);
 }
 
+static void ColSplitBackprop(Var& val, Var* lhs, Var* params) {
+    int from = params->value()(0, 0);
+    int len = params->value()(1, 0);
+    lhs->derivative().block(from, 0, len, 1) += val.derivative();
+}
+
+Var ColSplit(Var x, int from, int len) {
+    if (x.value().cols() != 1) {
+        throw std::runtime_error("cannot split not-a-column-vectors");
+    }
+
+    Eigen::MatrixXd params(2, 1);
+    params << from, len;
+    return x.graph()->CreateNode(
+            x.value().block(from, 0, len, 1),
+            x,
+            x.graph()->CreateParam(params),
+            ColSplitBackprop);
+}
+
 }

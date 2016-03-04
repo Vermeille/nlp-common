@@ -31,5 +31,6 @@ Var SSE(const Var& h, const Var& y);
 Var NthCol(const Var& w, int n);
 Var Tanh(const Var& x);
 Var ColAppend(Var x, Var y);
+Var ColSplit(Var x, int from, int len);
 
 }
