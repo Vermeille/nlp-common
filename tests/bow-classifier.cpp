@@ -25,6 +25,37 @@ Document Parse(const std::string& str, NGramMaker& ngram, LabelSet& ls) {
     return doc;
 }
 
+double Test(BagOfWords& bow, const Document& doc) {
+    int nb_correct = 0;
+    int nb_tokens = 0;
+
+    for (auto& ex : doc.examples) {
+        ad::ComputationGraph g;
+        auto h = bow.Step(g, ex.inputs);
+
+        Label predicted = ad::utils::OneHotVectorDecode(h.value());
+        nb_correct += predicted == ex.output ? 1 : 0;
+        ++nb_tokens;
+    }
+    return nb_correct * 100 / nb_tokens;
+}
+
+void Train(BagOfWords& bow, const Document& doc) {
+    ad::train::FeedForwardTrainer trainer(new ad::opt::Adagrad());
+    for (int i = 0; i < 5; ++i) {
+        double nll = 0;
+        for (auto& ex : doc.examples) {
+            nll += trainer.Step(ex.inputs, ex.output,
+                    [&](ad::ComputationGraph&) {
+                    return bow;
+                });
+        }
+        std::cout << "cost: " << nll << "\n";
+        std::cout << Test(bow, doc) << "% accuracy\n";
+    }
+}
+
+
 int main(int argc, char** argv) {
     if (argc != 2) {
         std::cerr << "Usage: " << argv[0] << " <dataset>\n";
@@ -38,10 +69,6 @@ int main(int argc, char** argv) {
     BagOfWords bow(ngram.dict().size(), ls.size());
 
     std::cout << "Training...\n";
-    for (int i = 0; i < 5; ++i) {
-        std::cout << bow.Train(doc) << "% accuracy" << std::endl;
-    }
-
     char* line;
     while ((line = readline("> "))) {
         add_history(line);

@@ -13,7 +13,6 @@ class BagOfWords {
     ad::nn::Hashtable words_;
     size_t output_size_;
     ad::opt::Adagrad adagrad_;
-    ad::train::FeedForwardTrainer trainer_;
 
   public:
     BagOfWords(size_t in_sz, size_t out_sz);
@@ -31,9 +30,6 @@ class BagOfWords {
     ad::Var Cost(ad::ComputationGraph& g, ad::Var h, int output_class);
 
     Eigen::MatrixXd ComputeClass(const std::vector<WordFeatures>& ws) const;
-
-    double Train(const Document& doc);
-    double Test(const Document& doc);
 
     void ResizeInput(size_t in);
     void ResizeOutput(size_t out);

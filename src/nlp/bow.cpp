@@ -7,14 +7,12 @@ static const double kLearningRate = 0.001;
 
 BagOfWords::BagOfWords(size_t in_sz, size_t out_sz)
         : words_(out_sz, in_sz),
-        output_size_(out_sz),
-        trainer_(new ad::opt::Adagrad()) {
+        output_size_(out_sz) {
 }
 
 BagOfWords::BagOfWords()
         : words_(0, 0),
-        output_size_(0),
-        trainer_(new ad::opt::Adagrad()) {
+        output_size_(0) {
 }
 
 ad::Var BagOfWords::Step(
@@ -33,34 +31,6 @@ ad::Var BagOfWords::Step(
 Eigen::MatrixXd BagOfWords::ComputeClass(const std::vector<WordFeatures>& ws) const {
     ad::ComputationGraph g;
     return ad::Softmax(Step(g, ws)).value();
-}
-
-double BagOfWords::Test(const Document& doc) {
-    double nll = 0;
-    int nb_correct = 0;
-    int nb_tokens = 0;
-
-    for (auto& ex : doc.examples) {
-        ad::ComputationGraph g;
-        auto h = Step(g, ex.inputs);
-
-        Label predicted = ad::utils::OneHotVectorDecode(h.value());
-        nb_correct += predicted == ex.output ? 1 : 0;
-        ++nb_tokens;
-    }
-    return nb_correct * 100 / nb_tokens;
-}
-
-double BagOfWords::Train(const Document& doc) {
-    double nll = 0;
-    for (auto& ex : doc.examples) {
-        nll += trainer_.Step(ex.inputs, ex.output,
-                [&](ad::ComputationGraph&) {
-                    return *this;
-                });
-    }
-    std::cout << "nll: " << nll << "\n";
-    return Test(doc);
 }
 
 ad::Var BagOfWords::Cost(ad::ComputationGraph& g, ad::Var h, int output_class) {
