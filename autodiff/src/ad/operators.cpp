@@ -45,7 +45,7 @@ static void MulBackprop(Var& val, Var* lhs, Var* rhs) {
 
 static void CoeffMulBackprop(Var& val, Var* lhs, Var* rhs) {
     lhs->derivative() +=  val.derivative() * rhs->value()(0, 0);
-    rhs->derivatuve() += val.derivative().transpose() * lhs->value();
+    rhs->derivative() += val.derivative().transpose() * lhs->value();
 }
 
 Var operator*(const Var& v1, const Var& v2) {

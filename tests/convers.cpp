@@ -63,8 +63,7 @@ double Train(Params& params, const Document& doc, const Dictionnary& dict) {
     using namespace ad;
     size_t nb = 0;
 
-    train::IterativeSequenceTaggerTrainer<opt::SGD>
-        trainer(opt::SGD(0.1));
+    train::WholeSequenceTaggerTrainer trainer(new opt::Minibatch(100, new opt::Adam()));
 
     for (auto& cur : doc.examples) {
         std::vector<WordFeatures> sentence;

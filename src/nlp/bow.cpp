@@ -8,13 +8,13 @@ static const double kLearningRate = 0.001;
 BagOfWords::BagOfWords(size_t in_sz, size_t out_sz)
         : words_(out_sz, in_sz),
         output_size_(out_sz),
-        trainer_(ad::opt::Adagrad()) {
+        trainer_(new ad::opt::Adagrad()) {
 }
 
 BagOfWords::BagOfWords()
         : words_(0, 0),
         output_size_(0),
-        trainer_(ad::opt::Adagrad()) {
+        trainer_(new ad::opt::Adagrad()) {
 }
 
 ad::Var BagOfWords::Step(

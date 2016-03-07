@@ -36,8 +36,7 @@ double SequenceClassifier::Train(const Document& doc) {
         }
 
         using namespace ad;
-        ad::train::FeedForwardTrainer<ad::opt::Adagrad>
-            trainer((ad::opt::Adagrad(0.1)));
+        ad::train::FeedForwardTrainer trainer(new ad::opt::Adagrad(0.1));
 
         trainer.Step(ex.inputs, ex.output,
                 [&](ad::ComputationGraph& g) {

@@ -6,7 +6,6 @@ struct ConversationParams {
     ad::nn::LSTMParams encoder_;
     ad::nn::LSTMParams encoder2_;
     ad::nn::FullyConnParams fc_;
-    ad::opt::Minibatch<ad::opt::Adagrad> adagrad_;
 
     size_t vocab_size_;
     size_t hidden_size_;
@@ -16,7 +15,6 @@ struct ConversationParams {
         : encoder_(hidden_size, 5),
         encoder2_(hidden_size, hidden_size),
         fc_(vocab_size, hidden_size),
-        adagrad_(100, ad::opt::Adagrad()),
         vocab_size_(vocab_size),
         hidden_size_(hidden_size) {
     }
@@ -77,9 +75,6 @@ class Conversation {
                 ad::utils::OneHotColumnVector(exp.idx, vocab_size_));
 
         return Sum(SoftmaxLoss(pred, target));
-
-        //return /*(1.0 / pred.size()) */ J;
-            //+ 1e-6 * (ad::nn::L2(fc_.Params()) + ad::nn::L2(encoder_.Params()));
     }
 #endif
 };

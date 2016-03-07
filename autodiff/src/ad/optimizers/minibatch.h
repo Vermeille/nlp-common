@@ -3,11 +3,10 @@
 namespace ad {
 namespace opt {
 
-template <class T>
 class Minibatch : public Optimizer {
     private:
         const int batch_size_;
-        T opt_;
+        std::unique_ptr<Optimizer> opt_;
         std::map<size_t, std::pair<int, Eigen::MatrixXd>> grad_mean_;
 
         std::pair<int, Eigen::MatrixXd>& SetCurrentGradient(Var v) {

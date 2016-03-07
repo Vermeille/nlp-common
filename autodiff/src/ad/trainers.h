@@ -5,13 +5,12 @@
 namespace ad {
 namespace train {
 
-template <class Updater>
 class FeedForwardTrainer {
     private:
-        Updater updater_;
+        std::unique_ptr<Optimizer> updater_;
 
     public:
-        FeedForwardTrainer(const Updater& updater)
+        FeedForwardTrainer(Optimizer* updater)
             : updater_(updater) {
         }
 
@@ -19,11 +18,11 @@ class FeedForwardTrainer {
         double Step(const T& input, const U& out, const ModelGen& model_gen) {
             ComputationGraph g;
             auto model = model_gen(g);
-            Var h = model.Step(g, input);
+            auto h = model.Step(g, input);
             Var J = model.Cost(g, h, out);
 
-            g.BackpropFrom(J);
-            g.Update(updater_);
+            g.BackpropFrom(J, 5);
+            g.Update(*updater_);
 
             return J.value()(0, 0);
         }

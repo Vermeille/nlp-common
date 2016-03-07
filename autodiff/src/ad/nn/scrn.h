@@ -76,6 +76,9 @@ class SCRNLayer {
                 ctx_, hidden_
             };
         }
+
+        void SetHidden(Var h) { hidden_ = h; }
+        Var GetHidden() const { return hidden_; }
 };
 
 } // nn

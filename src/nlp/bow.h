@@ -13,7 +13,7 @@ class BagOfWords {
     ad::nn::Hashtable words_;
     size_t output_size_;
     ad::opt::Adagrad adagrad_;
-    ad::train::FeedForwardTrainer<ad::opt::Adagrad> trainer_;
+    ad::train::FeedForwardTrainer trainer_;
 
   public:
     BagOfWords(size_t in_sz, size_t out_sz);
