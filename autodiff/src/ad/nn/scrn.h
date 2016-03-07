@@ -22,6 +22,10 @@ struct SCRNParams {
     std::shared_ptr<Param> ctx_;
     std::shared_ptr<Param> hidden_;
 
+    SCRNParams(size_t hidden_size, size_t input_size)
+        : SCRNParams(hidden_size / 2, hidden_size / 2, input_size) {
+    }
+
     SCRNParams(size_t ctx_size, size_t hidden_size, size_t input_size)
         : alpha_(std::make_shared<Param>(ctx_size, 1, Constant(3))),
         wsx_(std::make_shared<Param>(ctx_size, input_size)),
