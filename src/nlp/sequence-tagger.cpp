@@ -67,7 +67,7 @@ SequenceTaggerParams SequenceTaggerParams::FromSerialized(std::istream& in) {
     SequenceTaggerParams seq(0, 0);
 
     seq.words = ad::nn::Hashtable::FromSerialized(in);
-    seq.rnn = ad::nn::RNNLayerParams::FromSerialized(in);
+    seq.rnn = ad::nn::RNNParams::FromSerialized(in);
     seq.fc = ad::nn::FullyConnParams::FromSerialized(in);
     return seq;
 }

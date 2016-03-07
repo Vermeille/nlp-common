@@ -10,13 +10,13 @@
 namespace ad {
 namespace nn {
 
-struct RNNLayerParams {
+struct RNNParams {
     std::shared_ptr<Param> whx_;
     std::shared_ptr<Param> whh_;
     std::shared_ptr<Param> bh_;
     std::shared_ptr<Param> h_;
 
-    RNNLayerParams(int out_sz, int in_sz);
+    RNNParams(int out_sz, int in_sz);
 
     void ResizeInput(int size, double init = 1) {
         utils::RandomExpandMatrix(whx_->value(), whx_->rows(), size, -init, init);
@@ -30,7 +30,7 @@ struct RNNLayerParams {
     }
 
     void Serialize(std::ostream& out) const;
-    static RNNLayerParams FromSerialized(std::istream& in);
+    static RNNParams FromSerialized(std::istream& in);
 };
 
 class RNNLayer {
@@ -43,7 +43,7 @@ class RNNLayer {
     public:
         RNNLayer(
                 ComputationGraph& g,
-                const RNNLayerParams& params,
+                const RNNParams& params,
                 bool learnable = true);
 
         Var Step(Var in);

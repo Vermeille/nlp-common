@@ -11,7 +11,7 @@
 
 struct SequenceClassifier {
     ad::nn::Hashtable words;
-    ad::nn::RNNLayerParams encoder;
+    ad::nn::RNNParams encoder;
     ad::nn::FullyConnParams decoder;
 
     size_t input_size_;

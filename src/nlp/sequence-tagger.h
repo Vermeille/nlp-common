@@ -12,7 +12,7 @@
 
 struct SequenceTaggerParams {
     ad::nn::Hashtable words;
-    ad::nn::RNNLayerParams rnn;
+    ad::nn::RNNParams rnn;
     ad::nn::FullyConnParams fc;
 
     size_t output_size_;
