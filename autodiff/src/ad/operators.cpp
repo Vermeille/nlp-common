@@ -150,7 +150,7 @@ Var NLog(const Var& x) {
     double* dst_ptr = res.data();
     const double* src_ptr = x.value().data();
     for (int i = 0; i < res.size(); ++i) {
-        dst_ptr[i] = -log(src_ptr[i]);
+        dst_ptr[i] = -log(std::max(src_ptr[i], 1e-8));
     }
     return x.graph()->CreateNode(res, x, no_operand, NLogBackprop);
 }
@@ -187,7 +187,7 @@ Var SoftmaxLoss(Var h, Var y) {
     double* dy = y.value().data();
     for (size_t i = 0, len = res.size(); i < len; ++i) {
         if (dy[i] != 0.0) {
-            d[i] = -dy[i] * log(d[i]);
+            d[i] = -dy[i] * log(std::max(d[i], 1e-8));
         }
     }
     return h.graph()->CreateNode(res, h, y, SoftmaxLossBackprop);
