@@ -27,8 +27,10 @@ std::vector<WordFeatures> Tokenizer::FR(const std::wstring& str) {
             sentence.emplace_back(tok);
             tok.clear();
         } else if (ispunct(str[idx], fr)) {
-            sentence.emplace_back(tok);
-            tok.clear();
+            if (tok != L"") {
+                sentence.emplace_back(tok);
+                tok.clear();
+            }
             sentence.emplace_back(std::wstring() + str[idx]);
         }
 
@@ -47,8 +49,13 @@ std::vector<WordFeatures> Tokenizer::FR(const std::string& str) {
 std::vector<WordFeatures> Tokenizer::CharLevel(const std::wstring& str) {
     std::locale fr("fr_FR.UTF-8");
     std::vector<WordFeatures> sentence;
+    bool last_was_space = false;
     for (auto c : str) {
         if (isascii(c) || isalnum(c, fr)) {
+            if (last_was_space && isspace(c)) {
+                continue;
+            }
+            last_was_space = isspace(c);
             sentence.push_back(std::wstring() + c);
         }
     }
