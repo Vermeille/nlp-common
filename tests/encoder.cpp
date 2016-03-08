@@ -1,0 +1,149 @@
+#include <iostream>
+#include <fstream>
+#include <fenv.h>
+
+#include <thread>
+
+#include <stdio.h>
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#include <nlp/dict.h>
+#include <nlp/tokenizer.h>
+#include <nlp/autoencoder-w-bidir.h>
+
+Document Parse(const std::string& str, NGramMaker& ngram) {
+    std::ifstream dataset(str);
+    std::string line;
+    Document doc;
+    while (std::getline(dataset, line)) {
+        std::vector<WordFeatures> toks = Tokenizer::FR(line);
+        ngram.Learn(toks);
+        doc.examples.push_back(TrainingExample{toks, 0});
+    }
+
+    return doc;
+}
+
+std::vector<int> SupervisedDecode(
+        const AutoEncoderFullParams& params,
+        const std::vector<WordFeatures>& in,
+        int space,
+        int max) {
+    using namespace ad;
+    std::vector<int> answer;
+    ad::ComputationGraph g;
+    AutoEncoderFull autoenc(g, params, space);
+
+    for (Var x : autoenc.SupervisedStep(g, in)) {
+        answer.push_back(utils::OneHotVectorDecode(x.value()));
+    }
+
+    return answer;
+}
+
+std::vector<int> Decode(
+        const AutoEncoderFullParams& params,
+        const std::vector<WordFeatures>& in,
+        int space,
+        int max) {
+    using namespace ad;
+    std::vector<int> answer;
+    ad::ComputationGraph g;
+    AutoEncoderFull autoenc(g, params, space);
+
+    for (Var x : autoenc.FreestyleStep(g, in)) {
+        std::cout << utils::OneHotVectorDecode(x.value()) << "/" << x.value()(utils::OneHotVectorDecode(x.value()), 0) <<", ";
+        answer.push_back(utils::OneHotVectorDecode(x.value()));
+    }
+    std::cout << "\n";
+
+    return answer;
+}
+
+double Train(AutoEncoderFullParams& params, const Document& doc, const Dictionnary& dict) {
+    using namespace ad;
+    opt::ParallelMBLocks locks;
+    const size_t mb_size = 32;
+    const size_t threads = 3;
+    size_t ds_partition_size = 1000 / threads;
+
+    size_t nb = 0;
+    train::FeedForwardTrainer
+        trainer(new opt::Minibatch(mb_size, new opt::Adam()));
+
+    size_t nb_whole = 100;
+
+    while (1) {
+    double loss = 0;
+    for (size_t i = 0; i < doc.examples.size(); ++i) {
+        auto& cur = doc.examples[i];
+        if (cur.inputs.empty()) {
+            continue;
+        }
+
+        {
+            loss += trainer.Step(cur.inputs, cur.inputs, [&](ComputationGraph& g) {
+                    return AutoEncoderFull(g, params, dict.GetWordIdOrUnk(" "));
+                });
+        }
+        ++nb;
+
+        if (nb % 50 == 0) {
+            std::cout << "(" << loss << ")\n";
+            loss = 0;
+
+            for (auto& letter : cur.inputs) {
+                std::cout << dict.WordFromId(letter.idx) << " ";
+            }
+            std::cout << "\n";
+
+            auto example = Decode(params, cur.inputs, dict.GetWordIdOrUnk(" "),
+                    cur.inputs.size());
+            for (int letter : example) {
+                std::cout << dict.WordFromId(letter) << " ";
+            }
+            std::cout << "\n";
+        }
+    }
+    ++nb_whole;
+    }
+    return 0;
+}
+
+int main(int argc, char** argv) {
+    if (argc != 2) {
+        std::cerr << "Usage: " << argv[0] << " <dataset>\n";
+        return EXIT_FAILURE;
+    }
+
+    Eigen::setNbThreads(4);
+    NGramMaker ngram;
+    Document doc = Parse(argv[1], ngram);
+
+    std::cout << "VOCAB SIZE: " << ngram.dict().size() << "\n";
+
+    AutoEncoderFullParams encdec(ngram.dict().size(), 128, 128);
+
+    std::cout << "Training...\n";
+    for (int i = 0; i < 500; ++i) {
+        Train(encdec, doc, ngram.dict());
+        std::cout << i << " done.\n";
+    }
+
+    char* line;
+    while ((line = readline("> "))) {
+        add_history(line);
+
+        std::vector<WordFeatures> toks = Tokenizer::CharLevel(std::string(line));
+        ngram.Annotate(toks);
+        auto prediction = Decode(encdec, toks, ngram.dict().GetWordIdOrUnk(" "), 100);
+
+        for (auto p : prediction) {
+            std::cout << ngram.dict().WordFromId(p);
+        }
+        std::cout << "\n";
+    }
+
+    return 0;
+}
