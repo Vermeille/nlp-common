@@ -43,13 +43,20 @@ class Conversation {
     }
 
     ad::Var Cost(ad::ComputationGraph& g,
-            ad::Var pred,
-            const WordFeatures& exp) {
+            const std::vector<ad::Var>& pred,
+            const std::vector<WordFeatures>& exp) {
 
-        ad::Var target = g.CreateParam(
-                ad::utils::OneHotColumnVector(exp.idx, vocab_size_));
+        Eigen::MatrixXd zero(1, 1);
+        zero << 0;
+        ad::Var J = g.CreateParam(zero);
+        for (size_t i = 1; i < exp.size(); ++i) {
+            ad::Var target = g.CreateParam(
+                    ad::utils::OneHotColumnVector(exp[i].idx, vocab_size_));
 
-        return Sum(SoftmaxLoss(pred, target));
+            J = J + Sum(SoftmaxLoss(pred[i - 1], target));
+        }
+
+        return J;
     }
 };
 
