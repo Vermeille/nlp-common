@@ -30,7 +30,7 @@ class Minibatch : public Optimizer {
 
 
     public:
-        Minibatch(int size, const T& opt) : batch_size_(size), opt_(opt) {}
+        Minibatch(int size, Optimizer* opt) : batch_size_(size), opt_(opt) {}
 
         virtual void Update(Var& v) {
             auto& cur = SetCurrentGradient(v);
@@ -40,7 +40,7 @@ class Minibatch : public Optimizer {
             cur.first = 0;
             v.derivative() = cur.second;
             cur.second.setZero();
-            opt_.Update(v);
+            opt_->Update(v);
         }
 };
 
