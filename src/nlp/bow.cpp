@@ -28,9 +28,9 @@ ad::Var BagOfWords::Step(
     return sum;
 }
 
-Eigen::MatrixXd BagOfWords::ComputeClass(const std::vector<WordFeatures>& ws) const {
+ad::RWMatrix BagOfWords::ComputeClass(const std::vector<WordFeatures>& ws) const {
     ad::ComputationGraph g;
-    return ad::Softmax(Step(g, ws)).value();
+    return ad::Softmax(Step(g, ws)).value().Fetch();
 }
 
 ad::Var BagOfWords::Cost(ad::ComputationGraph& g, ad::Var h, int output_class) {
@@ -55,11 +55,10 @@ void BagOfWords::ResizeInput(size_t in) {
 }
 
 void BagOfWords::ResizeOutput(size_t out) {
-    words_.ResizeVectors(out);
     output_size_ = out;
 }
 
 double BagOfWords::weights(size_t label, size_t word) const {
-    return words_.Get(word)->value()(label, 0);
+    return words_.Get(word)->value().CudaRead(label, 0);
 }
 

@@ -4,7 +4,6 @@
 #include <string>
 #include <iostream>
 
-#include <Eigen/Dense>
 #include <ad/ad.h>
 
 #include "document.h"
@@ -12,7 +11,6 @@
 class BagOfWords {
     ad::nn::Hashtable words_;
     size_t output_size_;
-    ad::opt::Adagrad adagrad_;
 
   public:
     BagOfWords(size_t in_sz, size_t out_sz);
@@ -29,7 +27,7 @@ class BagOfWords {
 
     ad::Var Cost(ad::ComputationGraph& g, ad::Var h, int output_class);
 
-    Eigen::MatrixXd ComputeClass(const std::vector<WordFeatures>& ws) const;
+    ad::RWMatrix ComputeClass(const std::vector<WordFeatures>& ws) const;
 
     void ResizeInput(size_t in);
     void ResizeOutput(size_t out);

@@ -69,6 +69,7 @@ int main(int argc, char** argv) {
     BagOfWords bow(ngram.dict().size(), ls.size());
 
     std::cout << "Training...\n";
+    Train(bow, doc);
     char* line;
     while ((line = readline("> "))) {
         add_history(line);

@@ -22,7 +22,7 @@ ad::Var SequenceClassifierGraph::Step(
     return ad::Softmax(decoder_.Compute(encoded));
 }
 
-Eigen::MatrixXd SequenceClassifier::ComputeClass(
+ad::Matrix& SequenceClassifier::ComputeClass(
         const std::vector<WordFeatures>& ws) const {
     ad::ComputationGraph g;
     SequenceClassifierGraph graph(g, *this, input_size_, output_size_);

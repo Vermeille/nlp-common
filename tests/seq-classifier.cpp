@@ -32,15 +32,12 @@ int main(int argc, char** argv) {
     }
 
     NGramMaker ngram;
-    SequenceClassifier seq(0, 20, 20, 0);
     LabelSet ls;
     Document doc = Parse(argv[1], ngram, ls);
-
-    seq.ResizeInput(ngram.dict().size());
-    seq.ResizeOutput(ls.size());
+    SequenceClassifier seq(ngram.dict().size(), 20, 20, ls.size());
 
     std::cout << "Training...\n";
-    for (int i = 0; i < 50; ++i) {
+    for (int i = 0; i < 10; ++i) {
         std::cout << seq.Train(doc) << "% accuracy" << std::endl;
     }
 
@@ -50,10 +47,10 @@ int main(int argc, char** argv) {
 
         std::vector<WordFeatures> toks = Tokenizer::FR(std::string(line));
         ngram.Annotate(toks);
-        auto prediction = seq.ComputeClass(toks);
+        auto& prediction = seq.ComputeClass(toks);
 
         for (size_t l = 0; l < ls.size(); ++l) {
-            std::cout << ls.GetString(l) << ": " << prediction(l, 0) << "\n";
+            std::cout << ls.GetString(l) << ": " << prediction.CudaRead(l, 0) << "\n";
         }
     }
 

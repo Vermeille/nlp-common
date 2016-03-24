@@ -4,8 +4,6 @@
 #include <string>
 #include <iostream>
 
-#include <Eigen/Dense>
-
 #include <ad/ad.h>
 
 #include "document.h"
@@ -27,9 +25,6 @@ struct SequenceTaggerParams {
 
     double Test(const Document& doc);
     double Train(const Document& doc);
-
-    void ResizeInput(size_t in);
-    void ResizeOutput(size_t out);
 };
 
 class SequenceTagger {
@@ -50,12 +45,22 @@ class SequenceTagger {
         }
 
         ad::Var Step(ad::ComputationGraph& g, const WordFeatures& wf) {
-            return Softmax(fc_.Compute(rnn_.Step(words_.MakeVarFor(g, wf.idx))));
+            return fc_.Compute(rnn_.Step(words_.MakeVarFor(g, wf.idx)));
         }
 
-        ad::Var Cost(ad::ComputationGraph& g, ad::Var h, const WordFeatures& wf) {
-            ad::Var yt = g.CreateParam(
-                ad::utils::OneHotColumnVector(wf.pos, output_size_));
-            return ad::MSE(h, yt);// + 1e-4 * nn::L2ForAllParams(outs);
+        ad::Var Cost(ad::ComputationGraph& g,
+                const std::vector<ad::Var>& h,
+                const std::vector<WordFeatures>& wf) {
+            ad::RWMatrix zero(1, 1);
+            zero(0, 0) = 0;
+            ad::Var J = g.CreateParam(ad::Matrix(zero));
+            for (size_t i = 0; i < h.size(); ++i) {
+                ad::Var yt = g.CreateParam(
+                        ad::utils::OneHotColumnVector(wf[i].pos, output_size_));
+
+                J = J + ad::Sum(ad::SoftmaxLoss(h[i], yt));
+            }
+
+            return J;
         }
 };

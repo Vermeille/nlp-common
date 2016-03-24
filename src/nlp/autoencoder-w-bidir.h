@@ -159,9 +159,9 @@ struct AutoEncoderFull {
             const std::vector<ad::Var>& dec,
             const std::vector<WordFeatures>& original) {
 
-        Eigen::MatrixXd zero(1, 1);
-        zero << 0;
-        ad::Var J = g.CreateParam(zero);
+        ad::RWMatrix zero(1, 1);
+        zero(0, 0) = 0;
+        ad::Var J = g.CreateParam(ad::Matrix(zero));
         for (size_t i = 0; i < original.size(); ++i) {
             ad::Var target = g.CreateParam(
                     ad::utils::OneHotColumnVector(original[i].idx, vocab_size_));

@@ -46,9 +46,9 @@ class Conversation {
             const std::vector<ad::Var>& pred,
             const std::vector<WordFeatures>& exp) {
 
-        Eigen::MatrixXd zero(1, 1);
-        zero << 0;
-        ad::Var J = g.CreateParam(zero);
+        ad::RWMatrix zero(1, 1);
+        zero(0, 0) = 0;
+        ad::Var J = g.CreateParam(ad::Matrix(zero));
         for (size_t i = 1; i < exp.size(); ++i) {
             ad::Var target = g.CreateParam(
                     ad::utils::OneHotColumnVector(exp[i].idx, vocab_size_));

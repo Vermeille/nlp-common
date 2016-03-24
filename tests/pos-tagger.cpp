@@ -61,10 +61,7 @@ void Train(const std::string& dataset, const std::string& model) {
 
     SequenceTaggerParams tagger(ngram.dict().size(), ls.size());
 
-    std::cout << "Training...\n";
-    for (int i = 0; i < 5; ++i) {
-        std::cout << tagger.Train(doc) << "% accuracy" << std::endl;
-    }
+    std::cout << tagger.Train(doc) << "% accuracy FINAL" << std::endl;
 
     std::ofstream out(model);
     out << ngram.Serialize();

@@ -4,7 +4,6 @@
 #include <string>
 #include <iostream>
 
-#include <Eigen/Dense>
 #include <ad/ad.h>
 
 #include "document.h"
@@ -26,7 +25,7 @@ struct SequenceClassifier {
     std::string Serialize() const;
     static SequenceClassifier FromSerialized(std::istream& file);
 
-    Eigen::MatrixXd ComputeClass(const std::vector<WordFeatures>& ws) const;
+    ad::Matrix& ComputeClass(const std::vector<WordFeatures>& ws) const;
 
     double Train(const Document& doc);
     double Test(const Document& doc);

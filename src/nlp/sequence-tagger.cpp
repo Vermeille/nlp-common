@@ -18,7 +18,7 @@ void SequenceTaggerParams::Compute(std::vector<WordFeatures>& ws) {
     SequenceTagger tagger(g, output_size_, *this);
     for (size_t i = 0; i < ws.size(); ++i) {
         ws[i].pos = ad::utils::OneHotVectorDecode(
-                tagger.Step(g, ws[i]).value());
+                Softmax(tagger.Step(g, ws[i])).value());
     }
 }
 
@@ -32,7 +32,7 @@ double SequenceTaggerParams::Test(const Document& doc) {
         SequenceTagger tagger(g, output_size_, *this);
         for (size_t i = 0; i < ex.inputs.size(); ++i) {
             auto& wf = ex.inputs[i];
-            ad::Var out = tagger.Step(g, wf);
+            ad::Var out = Softmax(tagger.Step(g, wf));
 
             Label predicted = ad::utils::OneHotVectorDecode(out.value());
 
@@ -46,15 +46,18 @@ double SequenceTaggerParams::Test(const Document& doc) {
 double SequenceTaggerParams::Train(const Document& doc) {
     using namespace ad;
 
-    train::IterativeSequenceTaggerTrainer trainer(new ad::opt::Adagrad());
-    for (auto& ex : doc.examples) {
-        trainer.Step(ex.inputs, ex.inputs,
-                [&](ad::ComputationGraph& g) {
+    train::WholeSequenceTaggerTrainer trainer(new ad::opt::Adagrad(0.1));
+    for (int i = 0; i < 3; ++i) {
+        for (auto& ex : doc.examples) {
+            trainer.Step(ex.inputs, ex.inputs,
+                    [&](ad::ComputationGraph& g) {
                     return SequenceTagger(g, output_size_, *this);
-                });
+                    });
+        }
     }
     return Test(doc);
 }
+
 std::string SequenceTaggerParams::Serialize() const {
     std::ostringstream out;
     out << words.Serialize();
@@ -70,14 +73,5 @@ SequenceTaggerParams SequenceTaggerParams::FromSerialized(std::istream& in) {
     seq.rnn = ad::nn::RNNParams::FromSerialized(in);
     seq.fc = ad::nn::FullyConnParams::FromSerialized(in);
     return seq;
-}
-
-void SequenceTaggerParams::ResizeInput(size_t in) {
-    words.ResizeVocab(in);
-}
-
-void SequenceTaggerParams::ResizeOutput(size_t out) {
-    rnn.ResizeOutput(out);
-    output_size_ = (out > output_size_) ? out : output_size_;
 }
 

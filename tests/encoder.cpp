@@ -3,6 +3,7 @@
 #include <fenv.h>
 
 #include <thread>
+#include <chrono>
 
 #include <stdio.h>
 #include <readline/readline.h>
@@ -53,27 +54,26 @@ std::vector<int> Decode(
     AutoEncoderFull autoenc(g, params, space);
 
     for (Var x : autoenc.FreestyleStep(g, in)) {
-        std::cout << utils::OneHotVectorDecode(x.value()) << "/" << x.value()(utils::OneHotVectorDecode(x.value()), 0) <<", ";
         answer.push_back(utils::OneHotVectorDecode(x.value()));
+        //std::cout << answer.back() << ": " << x.value().CudaRead(answer.back(), 0) << "\n";
     }
-    std::cout << "\n";
 
     return answer;
 }
 
 double Train(AutoEncoderFullParams& params, const Document& doc, const Dictionnary& dict) {
     using namespace ad;
-    opt::ParallelMBLocks locks;
-    const size_t mb_size = 32;
+    const size_t mb_size = 10;
     const size_t threads = 3;
     size_t ds_partition_size = 1000 / threads;
 
     size_t nb = 0;
     train::FeedForwardTrainer
-        trainer(new opt::Minibatch(mb_size, new opt::Adam()));
+        trainer(new opt::Minibatch(mb_size, new opt::Adam(0.001)));
 
     size_t nb_whole = 100;
 
+    auto start = std::chrono::system_clock::now();
     while (1) {
     double loss = 0;
     for (size_t i = 0; i < doc.examples.size(); ++i) {
@@ -89,7 +89,10 @@ double Train(AutoEncoderFullParams& params, const Document& doc, const Dictionna
         }
         ++nb;
 
-        if (nb % 50 == 0) {
+        if (nb % 40 == 0) {
+            std::cout << "time: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start).count() << "ms\n";
+            start = std::chrono::system_clock::now();
+#if 0
             std::cout << "(" << loss << ")\n";
             loss = 0;
 
@@ -98,12 +101,13 @@ double Train(AutoEncoderFullParams& params, const Document& doc, const Dictionna
             }
             std::cout << "\n";
 
-            auto example = Decode(params, cur.inputs, dict.GetWordIdOrUnk(" "),
+            auto example = SupervisedDecode(params, cur.inputs, dict.GetWordIdOrUnk(" "),
                     cur.inputs.size());
             for (int letter : example) {
                 std::cout << dict.WordFromId(letter) << " ";
             }
             std::cout << "\n";
+#endif
         }
     }
     ++nb_whole;
@@ -117,13 +121,12 @@ int main(int argc, char** argv) {
         return EXIT_FAILURE;
     }
 
-    Eigen::setNbThreads(4);
     NGramMaker ngram;
     Document doc = Parse(argv[1], ngram);
 
     std::cout << "VOCAB SIZE: " << ngram.dict().size() << "\n";
 
-    AutoEncoderFullParams encdec(ngram.dict().size(), 128, 128);
+    AutoEncoderFullParams encdec(ngram.dict().size(), 1024, 1024);
 
     std::cout << "Training...\n";
     for (int i = 0; i < 500; ++i) {

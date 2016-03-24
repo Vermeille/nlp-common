@@ -9,9 +9,10 @@
 #include <nlp/tokenizer.h>
 #include <nlp/conversation-mrnn.h>
 
-const double temp = 1;
+const double temp = 0.5;
 
-static int Sample(const Eigen::MatrixXd& probs) {
+static int Sample(const ad::Matrix& probs_gpu) {
+    auto probs = probs_gpu.Fetch();
     double r = ad::utils::RandomRange(0, 1);
     double acc = 0;
     for (int i = 0; i < probs.rows(); ++i) {
@@ -37,16 +38,16 @@ Document Parse(const std::string& str, NGramMaker& ngram) {
 }
 
 template <class Params>
-std::vector<int> Answer(Params& params, const std::vector<WordFeatures>& in, int max) {
+std::vector<int> Answer(Params& params, const std::vector<WordFeatures>& in, int max, int space) {
     using namespace ad;
     std::vector<int> answer;
     ad::ComputationGraph g;
-    Conversation conv(g, params);
+    Conversation conv(g, params);//, space);
 
     Var decoded(nullptr);
     for (auto& wf : in) {
-        decoded = Softmax((1 / temp) * conv.Step(g, wf));
         answer.push_back(wf.idx);
+        decoded = Softmax((1 / temp) * conv.Step(g, wf));
     }
 
     answer.push_back(Sample(decoded.value()));
@@ -82,7 +83,7 @@ double Train(Params& params, const Document& doc, const Dictionnary& dict) {
             std::vector<WordFeatures> test;
             test.insert(test.end(), cur.inputs.begin(),
                     cur.inputs.begin() + std::min(5ul, cur.inputs.size()));
-            auto example = Answer(params, test, 80);
+            auto example = Answer(params, test, 80, dict.GetWordIdOrUnk(" "));
             for (int letter : example) {
                 std::cout << dict.WordFromId(letter);
             }
@@ -117,7 +118,7 @@ int main(int argc, char** argv) {
 
         std::vector<WordFeatures> toks = Tokenizer::CharLevel(std::string(line));
         ngram.Annotate(toks);
-        auto prediction = Answer(seq, toks, 100);
+        auto prediction = Answer(seq, toks, 100, ngram.dict().GetWordIdOrUnk(" "));
 
         for (auto p : prediction) {
             std::cout << ngram.dict().WordFromId(p);
