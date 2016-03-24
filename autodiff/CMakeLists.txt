@@ -1,0 +1,16 @@
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+project(AUTODIFF CXX)
+
+SET(CMAKE_INCLUDE_CURRENT_DIR ON)
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -O3 -Wall -Wextra -Wno-deprecated-declarations")
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} -O3 --std=c++11)
+
+
+ADD_SUBDIRECTORY(examples)
+ADD_SUBDIRECTORY(src)
+
+
+
+
