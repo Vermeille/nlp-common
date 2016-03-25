@@ -30,26 +30,24 @@ int OneHotVectorDecode(const Matrix& mat) {
     return idx - 1;
 }
 
-void WriteMatrix(const Matrix& mat, std::ostream& out) {
-#if 0
-    uint32_t magic = 'MATX';
+void WriteMatrix(const Matrix& gpumat, std::ostream& out) {
+    char magic[] = "MATX";
     out.write((char*)&magic, 4);
 
+    RWMatrix mat = gpumat.Fetch();
     int int_buf;
     int_buf = mat.rows();
     out.write((char*)&int_buf, sizeof (int));
     int_buf = mat.cols();
     out.write((char*)&int_buf, sizeof (int));
     out.write((char*)mat.data(), sizeof (double) * mat.size());
-#endif
 }
 
 Matrix ReadMatrix(std::istream& out) {
-#if 0
-    uint32_t magic;
+    char magic[4];
     out.read((char*)&magic, 4);
 
-    if (magic != 'MATX') {
+    if (!std::strncpy(magic, "MATX", 4)) {
         throw std::invalid_argument("Magic number 'MATX' not present");
     }
 
@@ -57,28 +55,24 @@ Matrix ReadMatrix(std::istream& out) {
     out.read((char*)&rows, sizeof (int));
     out.read((char*)&cols, sizeof (int));
 
-    Matrix mat(rows, cols);
+    RWMatrix mat(rows, cols);
     out.read((char*)mat.data(), sizeof (double) * mat.size());
-    return mat;
-#endif
-    return Matrix(1, 1);
+    return Matrix(mat);
 }
 
-void WriteMatrixTxt(const Matrix& mat, std::ostream& out) {
-#if 0
+void WriteMatrixTxt(const Matrix& gpumat, std::ostream& out) {
     out << "MATX\n";
 
+    RWMatrix mat = gpumat.Fetch();
     out << mat.rows() << " " << mat.cols() << "\n";
     const float* data = mat.data();
     for (size_t i = 0; i < mat.size(); ++i) {
         out << data[i] << " ";
     }
     out << "\n";
-#endif
 }
 
 Matrix ReadMatrixTxt(std::istream& in) {
-#if 0
     std::string magic;
     in >> magic;
 
@@ -89,15 +83,13 @@ Matrix ReadMatrixTxt(std::istream& in) {
     int rows, cols;
     in >> rows >> cols;
 
-    Matrix mat(rows, cols);
-    double* data = mat.data();
+    RWMatrix mat(rows, cols);
+    float* data = mat.data();
     for (size_t i = 0; i < mat.size(); ++i) {
         in >> data[i];
     }
 
-    return mat;
-#endif
-    return Matrix(1, 1);
+    return Matrix(mat);
 }
 } // utils
 } // ad
