@@ -21,15 +21,6 @@ Var FullyConnLayer::Compute(Var x) const {
     return w_ * x + b_;
 }
 
-void FullyConnParams::ResizeOutput(int size, double init) {
-    //utils::RandomExpandMatrix(w_->value(), size, w_->cols(), -init, init);
-    //utils::RandomExpandMatrix(b_->value(), size, 1, -init, init);
-}
-
-void FullyConnParams::ResizeInput(int size, double init) {
-    //utils::RandomExpandMatrix(w_->value(), w_->rows(), size, -init, init);
-}
-
 void FullyConnParams::Serialize(std::ostream& out) const {
     out << "FULLY-CONN\n";
     utils::WriteMatrixTxt(w_->value(), out);

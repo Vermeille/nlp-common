@@ -70,11 +70,6 @@ void SequenceClassifier::ResizeInput(size_t in) {
     words.ResizeVocab(in);
 }
 
-void SequenceClassifier::ResizeOutput(size_t out) {
-    decoder.ResizeOutput(out);
-    output_size_ = out;
-}
-
 std::string SequenceClassifier::Serialize() const {
     std::ostringstream oss;
     oss << "SEQUENCE-CLASSIFIER\n";

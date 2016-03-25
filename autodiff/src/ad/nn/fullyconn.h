@@ -13,9 +13,6 @@ struct FullyConnParams {
 
     FullyConnParams(int out_sz, int in_sz);
 
-    void ResizeOutput(int size, double init = 1);
-    void ResizeInput(int size, double init = 1);
-
     void Serialize(std::ostream& out) const;
     static FullyConnParams FromSerialized(std::istream& in);
 };

@@ -16,17 +16,6 @@ struct RNNParams {
 
     RNNParams(int out_sz, int in_sz);
 
-    void ResizeInput(int size, double init = 1) {
-        utils::RandomExpandMatrix(whx_->value(), whx_->rows(), size, -init, init);
-    }
-
-    void ResizeOutput(int size, double init = 1) {
-        utils::RandomExpandMatrix(whx_->value(), size, whx_->cols(), -init, init);
-        utils::RandomExpandMatrix(whh_->value(), size, size, -init, init);
-        utils::RandomExpandMatrix(bh_->value(), size, 1, -init, init);
-        utils::RandomExpandMatrix(h_->value(), size, 1, -init, init);
-    }
-
     void Serialize(std::ostream& out) const;
     static RNNParams FromSerialized(std::istream& in);
 };

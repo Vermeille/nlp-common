@@ -13,7 +13,6 @@ struct HighwayLayerParams {
     std::shared_ptr<Param> wc_;
 
     HighwayLayerParams(size_t sz);
-    void Resize(size_t in, double init = 1);
 };
 
 class HighwayLayer {

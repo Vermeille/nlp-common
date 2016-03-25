@@ -7,7 +7,6 @@ namespace ad {
 namespace utils {
 
 double RandomRange(float from, float to);
-void RandomExpandMatrix(Matrix& mat, int rows, int cols, float from, float to);
 Matrix OneHotColumnVector(int index, int rows);
 int OneHotVectorDecode(const Matrix& mat);
 

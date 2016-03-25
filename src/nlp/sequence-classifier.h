@@ -31,7 +31,6 @@ struct SequenceClassifier {
     double Test(const Document& doc);
 
     void ResizeInput(size_t in);
-    void ResizeOutput(size_t out);
 };
 
 class SequenceClassifierGraph {

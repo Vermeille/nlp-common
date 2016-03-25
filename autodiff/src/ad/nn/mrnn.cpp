@@ -21,25 +21,14 @@ DiscreteMRNNParams::DiscreteMRNNParams(int out_sz, size_t in_sz) :
     h_->value().SetZero();
 }
 
-void DiscreteMRNNParams::ResizeInput(size_t size, double init) {
+void DiscreteMRNNParams::ResizeInput(size_t size, const MatrixInitialization& init) {
     size_t out_sz = bh_->rows();
     while (whx_.size() < size) {
-        whx_.push_back(std::make_shared<Param>(out_sz, 1, Xavier()));
+        whx_.push_back(std::make_shared<Param>(out_sz, 1, init));
     }
     while (whh_.size() < size) {
-        whh_.push_back(std::make_shared<Param>(out_sz, out_sz, Xavier()));
+        whh_.push_back(std::make_shared<Param>(out_sz, out_sz, init));
     }
-}
-
-void DiscreteMRNNParams::ResizeOutput(size_t size, double init) {
-    for (auto& v : whx_) {
-        //utils::RandomExpandMatrix(v->value(), size, 1, -init, init);
-    }
-    for (auto& v : whh_) {
-        //utils::RandomExpandMatrix(v->value(), size, size, -init, init);
-    }
-    //utils::RandomExpandMatrix(h_->value(), size, 1, -init, init);
-    //utils::RandomExpandMatrix(bh_->value(), size, 1, -init, init);
 }
 
 void DiscreteMRNNParams::Serialize(std::ostream& out) const {
@@ -71,8 +60,8 @@ DiscreteMRNNParams DiscreteMRNNParams::FromSerialized(std::istream& in) {
     for (size_t i = 0; i < in_sz; ++i) {
         rnn.whh_.push_back(std::make_shared<Param>(utils::ReadMatrixTxt(in)));
     }
-    //rnn.h_->value() = utils::ReadMatrixTxt(in);
-    //rnn.bh_->value() = utils::ReadMatrixTxt(in);
+    rnn.h_->value() = utils::ReadMatrixTxt(in);
+    rnn.bh_->value() = utils::ReadMatrixTxt(in);
     return rnn;
 }
 

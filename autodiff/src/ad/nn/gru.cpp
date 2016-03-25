@@ -22,32 +22,6 @@ GRUParams::GRUParams(size_t output_size, size_t input_size)
     hidden_(std::make_shared<Param>(output_size, 1, Gaussian(0, 0.1))) {
 }
 
-
-void GRUParams::ResizeInput(size_t in, double init) {
-    //utils::RandomExpandMatrix(wzx_->value(), wzx_->rows(), in, -init, init);
-    //utils::RandomExpandMatrix(wrx_->value(), wrx_->rows(), in, -init, init);
-    //utils::RandomExpandMatrix(whx_->value(), whx_->rows(), in, -init, init);
-}
-
-void GRUParams::ResizeOutput(size_t out, double init) {
-    size_t input_size = wzx_->cols();
-#if 0
-    utils::RandomExpandMatrix(wzx_->value(), out, input_size, -init, init);
-    utils::RandomExpandMatrix(wzh_->value(), out, out, -init, init);
-    utils::RandomExpandMatrix(bz_->value(), out, 1, -init, init);
-
-    utils::RandomExpandMatrix(wrx_->value(), out, input_size, -init, init);
-    utils::RandomExpandMatrix(wrh_->value(), out, out, -init, init);
-    utils::RandomExpandMatrix(br_->value(), out, 1, -init, init);
-
-    utils::RandomExpandMatrix(whx_->value(), out, input_size, -init, init);
-    utils::RandomExpandMatrix(whh_->value(), out, out, -init, init);
-    utils::RandomExpandMatrix(bh_->value(), out, 1, -init, init);
-
-    utils::RandomExpandMatrix(hidden_->value(), out, 1, -init, init);
-#endif
-}
-
 GRULayer::GRULayer(
         ComputationGraph& g, const GRUParams& params, bool learnable)
     : wzx_(g.CreateParam(params.wzx_, learnable)),

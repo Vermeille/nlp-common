@@ -28,9 +28,6 @@ struct LSTMParams {
     std::shared_ptr<Param> cell_;
     std::shared_ptr<Param> hidden_;
 
-    void ResizeInput(size_t in, double init = 1);
-    void ResizeOutput(size_t out, double init = 1);
-
     LSTMParams(size_t output_size, size_t input_size);
 };
 

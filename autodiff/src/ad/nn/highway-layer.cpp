@@ -12,12 +12,6 @@ HighwayLayerParams::HighwayLayerParams(size_t sz)
         wc_(std::make_shared<Param>(sz, sz, Xavier())) {
 }
 
-void HighwayLayerParams::Resize(size_t sz, double init) {
-    utils::RandomExpandMatrix(w_->value(), sz, sz, -init, init);
-    utils::RandomExpandMatrix(wt_->value(), sz, sz, -init, init);
-    utils::RandomExpandMatrix(wc_->value(), sz, sz, -init, init);
-}
-
 HighwayLayer::HighwayLayer(
         ComputationGraph& g, const HighwayLayerParams& params, bool learnable)
         : w_(g.CreateParam(params.w_, learnable)),

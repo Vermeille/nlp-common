@@ -27,36 +27,6 @@ LSTMParams::LSTMParams(size_t output_size, size_t input_size)
     hidden_(std::make_shared<Param>(output_size, 1, Gaussian(0, 0.1))) {
 }
 
-
-void LSTMParams::ResizeInput(size_t in, double init) {
-    utils::RandomExpandMatrix(wix_->value(), wix_->rows(), in, -init, init);
-    utils::RandomExpandMatrix(wfx_->value(), wfx_->rows(), in, -init, init);
-    utils::RandomExpandMatrix(wox_->value(), wox_->rows(), in, -init, init);
-    utils::RandomExpandMatrix(wcx_->value(), wcx_->rows(), in, -init, init);
-}
-
-void LSTMParams::ResizeOutput(size_t out, double init) {
-    size_t input_size = wix_->cols();
-    utils::RandomExpandMatrix(wix_->value(), out, input_size, -init, init);
-    utils::RandomExpandMatrix(wih_->value(), out, out, -init, init);
-    utils::RandomExpandMatrix(bi_->value(), out, 1, -init, init);
-
-    utils::RandomExpandMatrix(wfx_->value(), out, input_size, -init, init);
-    utils::RandomExpandMatrix(wfh_->value(), out, out, -init, init);
-    utils::RandomExpandMatrix(bf_->value(), out, 1, -init, init);
-
-    utils::RandomExpandMatrix(wox_->value(), out, input_size, -init, init);
-    utils::RandomExpandMatrix(woh_->value(), out, out, -init, init);
-    utils::RandomExpandMatrix(bo_->value(), out, 1, -init, init);
-
-    utils::RandomExpandMatrix(wcx_->value(), out, input_size, -init, init);
-    utils::RandomExpandMatrix(wch_->value(), out, out, -init, init);
-    utils::RandomExpandMatrix(bc_->value(), out, 1, -init, init);
-
-    utils::RandomExpandMatrix(cell_->value(), out, 1, -init, init);
-    utils::RandomExpandMatrix(hidden_->value(), out, 1, -init, init);
-}
-
 LSTMLayer::LSTMLayer(
         ComputationGraph& g, const LSTMParams& params, bool learnable)
     : wix_(g.CreateParam(params.wix_, learnable)),

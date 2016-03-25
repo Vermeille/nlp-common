@@ -4,6 +4,7 @@
 
 #include "../graph.h"
 #include "../helpers.h"
+#include "../initializers.h"
 
 namespace ad {
 namespace nn {
@@ -16,8 +17,8 @@ struct DiscreteMRNNParams {
 
     DiscreteMRNNParams(int out_sz, size_t in_sz);
 
-    void ResizeInput(size_t size, double init = 1);
-    void ResizeOutput(size_t size, double init = 1);
+    void ResizeInput(size_t size,
+            const MatrixInitialization& init = Uniform(-0.08, 0.08));
 
     void Serialize(std::ostream& out) const;
     static DiscreteMRNNParams FromSerialized(std::istream& in);
