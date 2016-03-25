@@ -9,6 +9,7 @@ cuda_add_library(ad
     ad/graph.cpp
     ad/helpers.cpp
     ad/hashtable.cpp
+    ad/cuda/gpu_chunks_pool.h
     ad/nn/fullyconn.cpp
     ad/nn/gru.cpp
     ad/nn/rnn.cpp
@@ -25,6 +26,7 @@ cuda_add_library(ad
     ad/hashtable.h
     ad/trainers.h
     ad/initializers.h
+    ad/cuda/gpu_chunks_pool.cpp
     ad/nn/fullyconn.h
     ad/nn/rnn.h
     ad/nn/gru.h

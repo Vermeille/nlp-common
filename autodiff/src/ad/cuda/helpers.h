@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cuda_runtime.h>
 #include <cublas_v2.h>
 #include <memory>
 #include <iostream>
@@ -7,7 +8,7 @@
 #define CUDA_CALL(XXX) \
     do { auto err = XXX; if (err != cudaSuccess) { std::cerr << "CUDA Error: " << \
         cudaGetErrorString(err) << ", at line " << __LINE__ \
-        << std::endl; std::terminate(); } /*cudaDeviceSynchronize();*/} while (0)
+        << std::endl; std::terminate(); } } while (0)
 
 namespace cuda {
 
@@ -47,14 +48,6 @@ struct Ptr {
 };
 
 namespace helpers {
-
-struct CUFree {
-    template <class T>
-    void operator()(T* ptr) const { CUDA_CALL(cudaFree(ptr)); }
-};
-
-template <class T>
-using cunique_ptr = std::unique_ptr<T, CUFree>;
 
 template <class T>
 Ptr<T> cunew(size_t n) {

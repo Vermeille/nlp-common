@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <cassert>
 #include <random>
+#include <cstring>
 
 #include "cuda/helpers.h"
 

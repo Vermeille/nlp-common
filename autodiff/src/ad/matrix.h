@@ -9,14 +9,15 @@
 #include <vector>
 
 #include "cuda/helpers.h"
+#include "cuda/gpu_chunks_pool.h"
 
 namespace ad {
 namespace cuda {
 
 void SetIdentity(float* array, size_t rows, size_t cols);
 
-}
-}
+} // cuda
+} // ad
 
 namespace ad {
 
@@ -70,47 +71,10 @@ std::ostream& operator<<(std::ostream& strm, const RWMatrix& m) {
     return strm;
 }
 
-// 15% speedup
-class GPUChunksPool {
-    public:
-        template <class T>
-        using cuptr = ::cuda::Ptr<T>;
-
-    private:
-        std::unordered_map<int, std::vector<cuptr<float>>> frees_;
-        std::unordered_map<cuptr<float>, size_t> allocated_;
-
-    public:
-        ::cuda::Ptr<float> Alloc(size_t sz) {
-            auto& frees = frees_[sz];
-            cuptr<float> res;
-            if (frees.empty()) {
-                res = ::cuda::helpers::cunew<float>(sz);
-            } else {
-                res = frees.back();
-                frees.pop_back();
-            }
-            allocated_[res] = sz;
-            return res;
-        }
-
-        void Free(cuptr<float> ptr) {
-            auto sz_iter = allocated_.find(ptr);
-            if (sz_iter == allocated_.end()) {
-                throw std::runtime_error("try to free a ptr not allocated");
-            }
-            size_t sz = sz_iter->second;
-            allocated_.erase(sz_iter);
-            frees_[sz].push_back(ptr);
-        }
-};
-
-extern thread_local GPUChunksPool g_gpu_pool;
-
 struct GPUPoolDeleter {
     typedef ::cuda::Ptr<float> pointer;
     void operator()(::cuda::Ptr<float> ptr) {
-        g_gpu_pool.Free(ptr);
+        ::cuda::g_gpu_pool.Free(ptr);
     }
 };
 
@@ -126,13 +90,13 @@ class Matrix {
         Matrix(size_t r, size_t c)
             : rows_(r),
             cols_(c),
-            data_(g_gpu_pool.Alloc(r * c)) {
+            data_(::cuda::g_gpu_pool.Alloc(r * c)) {
         }
 
         explicit Matrix(const RWMatrix& m)
             : rows_(m.rows()),
             cols_(m.cols()),
-            data_(g_gpu_pool.Alloc(rows_ * cols_)) {
+            data_(::cuda::g_gpu_pool.Alloc(rows_ * cols_)) {
                 ::cuda::helpers::CPUToGPU(data(), m.data(), size());
         }
 
@@ -152,7 +116,7 @@ class Matrix {
             rows_ = m.rows_;
             cols_ = m.cols_;
             data_ = std::move(m.data_);
-            m.data_.reset(g_gpu_pool.Alloc(m.rows_ * m.cols_));
+            m.data_.reset(::cuda::g_gpu_pool.Alloc(m.rows_ * m.cols_));
             return *this;
         }
 
