@@ -26,6 +26,7 @@ cuda_add_library(ad
     ad/hashtable.h
     ad/trainers.h
     ad/initializers.h
+    ad/rwmatrix.h
     ad/cuda/gpu_chunks_pool.cpp
     ad/nn/fullyconn.h
     ad/nn/rnn.h
