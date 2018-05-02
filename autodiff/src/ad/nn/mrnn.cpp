@@ -9,8 +9,8 @@ namespace ad {
 namespace nn {
 
 DiscreteMRNNParams::DiscreteMRNNParams(int out_sz, size_t in_sz) :
-        bh_(std::make_shared<Param>(out_sz, 1, Constant(0))),
-        h_(std::make_shared<Param>(out_sz, 1, Gaussian(0, 0.01))) {
+        bh_(std::make_shared<Param>(out_sz, 1, Uniform(-0.008, 0.008))),
+        h_(std::make_shared<Param>(out_sz, 1, Uniform(-0.008, 0.008)))) {
     for (size_t i = 0; i < in_sz; ++i) {
         whx_.push_back(std::make_shared<Param>(out_sz, 1, Xavier()));
     }
@@ -21,7 +21,8 @@ DiscreteMRNNParams::DiscreteMRNNParams(int out_sz, size_t in_sz) :
     h_->value().SetZero();
 }
 
-void DiscreteMRNNParams::ResizeInput(size_t size, const MatrixInitialization& init) {
+void DiscreteMRNNParams::ResizeInput(size_t size,
+                                     const MatrixInitialization& init) {
     size_t out_sz = bh_->rows();
     while (whx_.size() < size) {
         whx_.push_back(std::make_shared<Param>(out_sz, 1, init));
@@ -65,12 +66,11 @@ DiscreteMRNNParams DiscreteMRNNParams::FromSerialized(std::istream& in) {
     return rnn;
 }
 
-DiscreteMRNNLayer::DiscreteMRNNLayer(
-            ComputationGraph& g,
-            const DiscreteMRNNParams& params,
-            bool learnable) :
-        bh_(g.CreateParam(params.bh_, learnable)),
-        h_(g.CreateParam(params.h_, learnable)) {
+DiscreteMRNNLayer::DiscreteMRNNLayer(ComputationGraph& g,
+                                     const DiscreteMRNNParams& params,
+                                     bool learnable)
+    : bh_(g.CreateParam(params.bh_, learnable)),
+      h_(g.CreateParam(params.h_, learnable)) {
     for (size_t i = 0, end = params.whx_.size(); i < end; ++i) {
         whx_.emplace_back(g.CreateParam(params.whx_[i], learnable));
         whh_.emplace_back(g.CreateParam(params.whh_[i], learnable));
@@ -85,9 +85,7 @@ Var DiscreteMRNNLayer::Step(int x) {
     return h_ = Tanh(whx_[x] + whh_[x] * h_ + bh_);
 }
 
-std::vector<Var> DiscreteMRNNLayer::Params() const {
-    return used_vars_;
-}
+std::vector<Var> DiscreteMRNNLayer::Params() const { return used_vars_; }
 
-} // nn
-} // ad
+}  // nn
+}  // ad

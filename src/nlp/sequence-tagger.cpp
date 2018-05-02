@@ -54,6 +54,7 @@ double SequenceTaggerParams::Train(const Document& doc) {
                     return SequenceTagger(g, output_size_, *this);
                     });
         }
+        std::cout << Test(doc) << "\n";
     }
     return Test(doc);
 }

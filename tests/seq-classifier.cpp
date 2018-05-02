@@ -34,12 +34,10 @@ int main(int argc, char** argv) {
     NGramMaker ngram;
     LabelSet ls;
     Document doc = Parse(argv[1], ngram, ls);
-    SequenceClassifier seq(ngram.dict().size(), 20, 20, ls.size());
+    SequenceClassifier seq(ls.size(), 20, 20, ngram.dict().size());
 
     std::cout << "Training...\n";
-    for (int i = 0; i < 10; ++i) {
-        std::cout << seq.Train(doc) << "% accuracy" << std::endl;
-    }
+    std::cout << seq.Train(doc) << "% accuracy" << std::endl;
 
     char* line;
     while ((line = readline("> "))) {

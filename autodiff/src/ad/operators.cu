@@ -21,52 +21,94 @@ struct cuAddBackprop {
     }
 };
 
-static void AddBackprop(Var& val, Var* lhs, Var* rhs) {
-    cuAddBackprop bp {
-        lhs->derivative().data().Get(),
-        rhs->derivative().data().Get(),
-        val.derivative().data().Get()
-    };
-    cuda::RunKernel(bp, val.value().size());
-}
-
 Var operator+(const Var& v1, const Var& v2) {
-    return v1.graph()->CreateNode(v1.value() + v2.value(), v1, v2, AddBackprop);
-}
+    class AddOperator : public Operator {
+        Var lhs_;
+        Var rhs_;
 
-static void SubBackprop(Var& val, Var* lhs, Var* rhs) {
-    lhs->derivative() += val.derivative();
-    rhs->derivative() -= val.derivative();
+        public:
+            AddOperator(Var lhs, Var rhs)
+                : Operator(
+                        lhs.graph(),
+                        lhs.value() + rhs.value()),
+                lhs_(lhs),
+                rhs_(rhs) {
+            }
+
+            virtual void Backward() override {
+                cuAddBackprop bp {
+                    lhs_.derivative().data().Get(),
+                    rhs_.derivative().data().Get(),
+                    derivative().data().Get()
+                };
+                cuda::RunKernel(bp, value().size());
+            }
+    };
+    return v1.graph()->CreateNode(std::make_shared<AddOperator>(v1, v2));
 }
 
 Var operator-(const Var& v1, const Var& v2) {
-    return v1.graph()->CreateNode(v1.value() - v2.value(), v1, v2, SubBackprop);
+    class SubOperator : public Operator {
+        Var lhs_;
+        Var rhs_;
+
+        public:
+            SubOperator(Var lhs, Var rhs)
+                : Operator(
+                        lhs.graph(),
+                        lhs.value() - rhs.value()),
+                lhs_(lhs),
+                rhs_(rhs) {
+            }
+
+            virtual void Backward() override {
+                lhs_.derivative() += derivative();
+                rhs_.derivative() -= derivative();
+            }
+    };
+    return v1.graph()->CreateNode(std::make_shared<SubOperator>(v1, v2));
 }
 
 Var operator-(float a, const Var& v1) {
-    Matrix coeff(v1.value().rows(), v1.value().cols());
-    coeff.SetConstant(a);
-    Var coeff_var = v1.graph()->CreateParam(std::move(coeff));
-    return v1.graph()->CreateNode(
-            a - v1.value(), coeff_var, v1, SubBackprop);
+    class SubCoeffOperator : public Operator {
+        float lhs_;
+        Var rhs_;
+
+        public:
+            SubCoeffOperator(float lhs, Var rhs)
+                : Operator(
+                        rhs.graph(),
+                        lhs - rhs.value()),
+                lhs_(lhs),
+                rhs_(rhs) {
+            }
+
+            virtual void Backward() override {
+                rhs_.derivative() -= derivative();
+            }
+    };
+    return v1.graph()->CreateNode(std::make_shared<SubCoeffOperator>(a, v1));
 }
 
 Var operator-(const Var& v1, float a) {
-    Matrix coeff(v1.value().rows(), v1.value().cols());
-    coeff.SetConstant(a);
-    Var coeff_var = v1.graph()->CreateParam(std::move(coeff));
-    return v1.graph()->CreateNode(
-            v1.value() - a, v1, coeff_var, SubBackprop);
-}
+    class SubCoeffOperator : public Operator {
+        Var lhs_;
+        float rhs_;
 
-static void MulBackprop(Var& val, Var* lhs, Var* rhs) {
-    lhs->derivative() += MulNT(val.derivative(), rhs->value());
-    rhs->derivative() += MulTN(lhs->value(), val.derivative());
-}
+        public:
+            SubCoeffOperator(Var lhs, float rhs)
+                : Operator(
+                        lhs.graph(),
+                        lhs.value() - rhs),
+                lhs_(lhs),
+                rhs_(rhs) {
+            }
 
-static void CoeffMulBackprop(Var& val, Var* lhs, Var* rhs) {
-    lhs->derivative() += val.derivative() * rhs->value().CudaRead(0, 0);
-    rhs->derivative() += MulTN(val.derivative(), lhs->value());
+            virtual void Backward() override {
+                lhs_.derivative() += derivative();
+            }
+    };
+    return v1.graph()->CreateNode(std::make_shared<SubCoeffOperator>(v1, a));
 }
 
 Var operator*(const Var& v1, const Var& v2) {
@@ -75,84 +117,173 @@ Var operator*(const Var& v1, const Var& v2) {
     }
 
     if (v1.value().rows() == 1 && v1.value().cols() == 1) {
+        class MulCoeffOperator : public Operator {
+            Var lhs_;
+            Var rhs_;
+
+            public:
+                MulCoeffOperator(Var lhs, Var rhs)
+                    : Operator(
+                            lhs.graph(),
+                            lhs.value() * rhs.value().CudaRead(0, 0)),
+                    lhs_(lhs),
+                    rhs_(rhs) {
+                }
+
+                virtual void Backward() override {
+                    lhs_.derivative() += derivative() * rhs_.value().CudaRead(0, 0);
+                    rhs_.derivative() += MulTN(derivative(), lhs_.value());
+                }
+        };
         return v1.graph()->CreateNode(
-                v2.value() * v1.value().CudaRead(0, 0), v2, v1, CoeffMulBackprop);
+                std::make_shared<MulCoeffOperator>(v2, v1));
     }
 
-    return v1.graph()->CreateNode(v1.value() * v2.value(), v1, v2, MulBackprop);
+    class MulOperator : public Operator {
+        Var lhs_;
+        Var rhs_;
+
+        public:
+            MulOperator(Var lhs, Var rhs)
+                : Operator(
+                        lhs.graph(),
+                        lhs.value() * rhs.value()),
+                lhs_(lhs),
+                rhs_(rhs) {
+            }
+
+            virtual void Backward() override {
+                lhs_.derivative() += MulNT(derivative(), rhs_.value());
+                rhs_.derivative() += MulTN(lhs_.value(), derivative());
+            }
+    };
+    return v1.graph()->CreateNode(std::make_shared<MulOperator>(v1, v2));
 }
 
+class MulCoeffWithCteOperator : public Operator {
+    Var lhs_;
+    float rhs_;
+
+    public:
+        MulCoeffWithCteOperator(Var lhs, float rhs)
+            : Operator(lhs.graph(), lhs.value() * rhs),
+            lhs_(lhs),
+            rhs_(rhs) {
+        }
+
+        virtual void Backward() override {
+            lhs_.derivative() += derivative() * rhs_;
+        }
+};
+
 Var operator*(float a, const Var& v1) {
-    Matrix coeff(1, 1);
-    coeff.SetConstant(a);
-    Var coeff_var = v1.graph()->CreateParam(std::move(coeff));
-    return v1.graph()->CreateNode(v1.value() * a, v1, coeff_var, CoeffMulBackprop);
+    return v1.graph()->CreateNode(
+            std::make_shared<MulCoeffWithCteOperator>(v1, a));
 }
 
 Var operator*(const Var& v1, float a) {
-    Matrix coeff(1, 1);
-    coeff.SetConstant(a);
-    Var coeff_var = v1.graph()->CreateParam(std::move(coeff));
-    return v1.graph()->CreateNode(v1.value() * a, v1, coeff_var, CoeffMulBackprop);
-}
-
-static void ReluBackprop(Var& val, Var* lhs, Var*) {
-    Matrix relugrad(val.value().rows(), val.value().cols());
-    auto g = cuda::Array(lhs->derivative().data());
-    auto x = cuda::Array(lhs->value().data());
-    auto dx = cuda::Array(val.derivative().data());
-    cuda::RunKernel(cuda::Seq(g += (x > cuda::Value(0)) * dx), val.value().size());
+    return v1.graph()->CreateNode(
+            std::make_shared<MulCoeffWithCteOperator>(v1, a));
 }
 
 Var Relu(const Var& v1) {
-    Matrix res(v1.value().rows(), v1.value().cols());
-    cuda::Relu(res.data(), v1.value().data(), res.size());
-    return v1.graph()->CreateNode(
-            std::move(res), v1, no_operand, ReluBackprop);
-}
+    class ReluOperator : public Operator {
+        Var lhs_;
 
-static void EltSquareBackprop(Var& val, Var* lhs, Var*) {
-    auto dx = cuda::Array(lhs->derivative().data());
-    auto dprev = cuda::Array(val.derivative().data());
-    auto x = cuda::Array(lhs->value().data());
-    cuda::RunKernel(cuda::Seq(dx += cuda::Value(2) * dprev * x), val.value().size());
+        public:
+            ReluOperator(Var lhs)
+                : Operator(
+                        lhs.graph(),
+                        Matrix(lhs.value().rows(), lhs.value().cols())),
+                lhs_(lhs) {
+                cuda::Relu(value().data(), lhs_.value().data(), value().size());
+            }
+
+            virtual void Backward() override {
+                auto g = cuda::Array(lhs_.derivative().data());
+                auto x = cuda::Array(lhs_.value().data());
+                auto dx = cuda::Array(derivative().data());
+                cuda::RunKernel(cuda::Seq(
+                            g += (x > cuda::Value(0)) * dx),
+                        value().size());
+            }
+    };
+    return v1.graph()->CreateNode(std::make_shared<ReluOperator>(v1));
 }
 
 Var EltSquare(const Var& v1) {
-    return v1.graph()->CreateNode(
-            v1.value() ^ v1.value(), v1, no_operand, EltSquareBackprop);
-}
+    class EltSquare : public Operator {
+        Var lhs_;
 
-static void EltwiseMulBackprop(Var& val, Var* lhs, Var* rhs) {
-    auto _dlhs = cuda::Array(lhs->derivative().data());
-    auto _lhs = cuda::Array(lhs->value().data());
-    auto _drhs = cuda::Array(rhs->derivative().data());
-    auto _rhs = cuda::Array(rhs->value().data());
-    auto _dprev = cuda::Array(val.derivative().data());
-    cuda::RunKernel(cuda::Seq(
-            _dlhs += _rhs * _dprev,
-            _drhs += _lhs * _dprev),
-        val.value().size());
+        public:
+            EltSquare(Var lhs)
+                : Operator(lhs.graph(), lhs.value() ^ lhs.value()),
+                lhs_(lhs) {
+            }
+
+            virtual void Backward() override {
+                auto dx = cuda::Array(lhs_.derivative().data());
+                auto dprev = cuda::Array(derivative().data());
+                auto x = cuda::Array(lhs_.value().data());
+                cuda::RunKernel(cuda::Seq(
+                            dx += cuda::Value(2) * dprev * x),
+                        value().size());
+            }
+    };
+    return v1.graph()->CreateNode(std::make_shared<EltSquare>(v1));
 }
 
 Var operator^(const Var& v1, const Var& v2) {
-    return v1.graph()->CreateNode(
-            v1.value() ^ v2.value(), v1, v2, EltwiseMulBackprop);
-}
+    class EltwiseMul : public Operator {
+        Var lhs_;
+        Var rhs_;
 
-static void LogBackprop(Var& val, Var* lhs, Var*) {
-    auto da = cuda::Array(lhs->derivative().data());
-    auto dx = cuda::Array(val.derivative().data());
-    auto a = cuda::Array(lhs->value().data());
-    cuda::RunKernel(cuda::Seq(da += dx / a), val.derivative().size());
+        public:
+            EltwiseMul(Var lhs, Var rhs)
+                : Operator(lhs.graph(), lhs.value() ^ rhs.value()),
+                lhs_(lhs),
+                rhs_(rhs) {
+            }
+
+            virtual void Backward() override {
+                auto _dlhs = cuda::Array(lhs_.derivative().data());
+                auto _lhs = cuda::Array(lhs_.value().data());
+                auto _drhs = cuda::Array(rhs_.derivative().data());
+                auto _rhs = cuda::Array(rhs_.value().data());
+                auto _dprev = cuda::Array(derivative().data());
+                cuda::RunKernel(cuda::Seq(
+                            _dlhs += _rhs * _dprev,
+                            _drhs += _lhs * _dprev),
+                        value().size());
+            }
+    };
+    return v1.graph()->CreateNode(std::make_shared<EltwiseMul>(v1, v2));
 }
 
 Var Log(const Var& val) {
-    Matrix res(val.value().rows(), val.value().cols());
-    auto r = cuda::Array(res.data());
-    auto x = cuda::Array(val.value().data());
-    cuda::RunKernel(cuda::Seq(r = cuda::log(x)), res.size());
-    return val.graph()->CreateNode(std::move(res), val, no_operand, LogBackprop);
+    class LogOperator : public Operator {
+        Var lhs_;
+
+        public:
+            LogOperator(Var lhs)
+                : Operator(lhs.graph(),
+                        Matrix(lhs.value().rows(), lhs.value().cols())),
+                lhs_(lhs) {
+                auto r = cuda::Array(value().data());
+                auto x = cuda::Array(lhs_.value().data());
+                cuda::RunKernel(cuda::Seq(r = cuda::log(x)), value().size());
+            }
+
+            virtual void Backward() override {
+                auto da = cuda::Array(lhs_.derivative().data());
+                auto dx = cuda::Array(derivative().data());
+                auto a = cuda::Array(lhs_.value().data());
+                cuda::RunKernel(
+                        cuda::Seq(da += dx / a),
+                        derivative().size());
+            }
+    };
+    return val.graph()->CreateNode(std::make_shared<LogOperator>(val));
 }
 
 Var CrossEntropy(const Var& h, const Var& y) {
@@ -170,21 +301,39 @@ static Matrix Softmax(const Matrix& x1) {
     return res;
 }
 
-static void SoftmaxLossBackprop(Var& val, Var* lhs, Var* rhs) {
-    Matrix softmaxed = Softmax(lhs->value());
-    auto p = cuda::Array(softmaxed.data());
-    auto dx = cuda::Array(lhs->derivative().data());
-    auto y = cuda::Array(rhs->value().data());
-    auto dprev = cuda::Array(val.derivative().data());
-    cuda::RunKernel(cuda::Seq(dx += (p - y) * dprev), val.value().size());
-}
-
 Var SoftmaxLoss(Var h, Var target) {
-    auto res = Softmax(h.value());
-    auto r = cuda::Array(res.data());
-    auto y = cuda::Array(target.value().data());
-    cuda::RunKernel(cuda::Seq(r = cuda::Value(0) - y * cuda::log(r)), res.size());
-    return h.graph()->CreateNode(std::move(res), h, target, SoftmaxLossBackprop);
+    class SoftmaxLossOperator : public Operator {
+        Var predicted_;
+        Var target_;
+        Matrix softmaxed_;
+
+        public:
+            SoftmaxLossOperator(Var h, Var t)
+                : Operator(h.graph(),
+                        Matrix(h.value().rows(), h.value().cols())),
+                predicted_(h),
+                target_(t),
+                softmaxed_(Softmax(h.value())) {
+                    auto r = cuda::Array(softmaxed_.data());
+                    auto s = cuda::Array(value().data());
+                    auto y = cuda::Array(target_.value().data());
+                    cuda::RunKernel(
+                            cuda::Seq(s = cuda::Value(0) - y * cuda::log(r)),
+                            softmaxed_.size());
+            }
+
+            virtual void Backward() override {
+                auto p = cuda::Array(softmaxed_.data());
+                auto dx = cuda::Array(predicted_.derivative().data());
+                auto y = cuda::Array(target_.value().data());
+                auto dprev = cuda::Array(derivative().data());
+                cuda::RunKernel(
+                        cuda::Seq(dx += (p - y) * dprev),
+                        value().size());
+            }
+    };
+    return h.graph()->CreateNode(
+            std::make_shared<SoftmaxLossOperator>(h, target));
 }
 
 struct cuSoftmaxBackprop {
@@ -203,59 +352,95 @@ struct cuSoftmaxBackprop {
     }
 };
 
-static void SoftmaxBackprop(Var& val, Var* lhs, Var*) {
-    cuSoftmaxBackprop bp {
-        lhs->derivative().data().Get(),
-        val.derivative().data().Get(),
-        val.value().data().Get(),
-        val.value().size()
-    };
-    cuda::RunKernel(bp, val.value().size());
-}
-
 Var Softmax(const Var& x) {
-    return x.graph()->CreateNode(
-            Softmax(x.value()), x, no_operand, SoftmaxBackprop);
-}
+    class SoftmaxOperator : public Operator {
+        Var lhs_;
 
-static void SigmoidBackprop(Var& val, Var* lhs, Var*) {
-    auto a = cuda::Array(val.value().data());
-    auto dprev = cuda::Array(val.derivative().data());
-    auto dlhs = cuda::Array(lhs->derivative().data());
-    cuda::RunKernel(cuda::Seq(
-            dlhs += dprev * (a * (cuda::Value(1.0) - a))),
-        val.value().size());
+        public:
+            SoftmaxOperator(Var lhs)
+                : Operator(lhs.graph(), Softmax(lhs.value())),
+                lhs_(lhs) {
+            }
+
+            virtual void Backward() override {
+                cuSoftmaxBackprop bp {
+                    lhs_.derivative().data().Get(),
+                    derivative().data().Get(),
+                    value().data().Get(),
+                    value().size()
+                };
+                cuda::RunKernel(bp, value().size());
+            }
+    };
+    return x.graph()->CreateNode(std::make_shared<SoftmaxOperator>(x));
 }
 
 Var Sigmoid(const Var& x) {
-    Matrix res(x.value().rows(), x.value().cols());
-    auto lhs = cuda::Array(x.value().data());
-    auto r = cuda::Array(res.data());
-    cuda::RunKernel(cuda::Seq(
-            r = cuda::Value(1) / (cuda::Value(1) + exp(cuda::Value(0) - lhs))),
-        x.value().size());
-    return x.graph()->CreateNode(std::move(res), x, no_operand, SigmoidBackprop);
-}
+    class SigmoidOperator : public Operator {
+        Var lhs_;
 
-static void SumBackprop(Var& val, Var* lhs, Var*) {
-    lhs->derivative() += val.derivative().CudaRead(0, 0);
+        public:
+            SigmoidOperator(Var lhs)
+                : Operator(
+                        lhs.graph(),
+                        Matrix(lhs.value().rows(), lhs.value().cols())),
+                lhs_(lhs) {
+                    auto culhs = cuda::Array(lhs_.value().data());
+                    auto r = cuda::Array(value().data());
+                    cuda::RunKernel(cuda::Seq(
+                            r = cuda::Value(1) /
+                                (cuda::Value(1) + exp(cuda::Value(0) - culhs))),
+                        value().size());
+            }
+
+            virtual void Backward() override {
+                auto a = cuda::Array(value().data());
+                auto dprev = cuda::Array(derivative().data());
+                auto dlhs = cuda::Array(lhs_.derivative().data());
+                cuda::RunKernel(cuda::Seq(
+                            dlhs += dprev * (a * (cuda::Value(1.0) - a))),
+                        value().size());
+            }
+    };
+    return x.graph()->CreateNode(std::make_shared<SigmoidOperator>(x));
 }
 
 Var Sum(const Var& a) {
-    Matrix res(1, 1);
-    res.CudaWrite(0, 0, a.value().sum());
-    return a.graph()->CreateNode(std::move(res), a, no_operand, SumBackprop);
-}
+    class SumOperator : public Operator {
+        Var lhs_;
 
-static void MeanBackprop(Var& val, Var* lhs, Var*) {
-    lhs->derivative() +=
-        val.derivative().CudaRead(0, 0) / val.value().size();
+        public:
+            SumOperator(Var lhs)
+                : Operator(lhs.graph(), Matrix(1, 1)),
+                lhs_(lhs) {
+                    value().CudaWrite(0, 0, lhs.value().sum());
+            }
+
+            virtual void Backward() override {
+                lhs_.derivative() += derivative().CudaRead(0, 0);
+            }
+    };
+    return a.graph()->CreateNode(std::make_shared<SumOperator>(a));
 }
 
 Var Mean(const Var& a) {
-    Matrix res(1, 1);
-    res.CudaWrite(0, 0, a.value().sum() / a.value().size());
-    return a.graph()->CreateNode(std::move(res), a, no_operand, MeanBackprop);
+    class MeanOperator : public Operator {
+        Var lhs_;
+
+        public:
+            MeanOperator(Var lhs)
+                : Operator(lhs.graph(), Matrix(1, 1)),
+                lhs_(lhs) {
+                    value().CudaWrite(0, 0,
+                            lhs.value().sum() / lhs.value().size());
+            }
+
+            virtual void Backward() override {
+                lhs_.derivative()
+                    += derivative().CudaRead(0, 0) / lhs_.value().size();
+            }
+    };
+    return a.graph()->CreateNode(std::make_shared<MeanOperator>(a));
 }
 
 Var MSE(const Var& h, const Var& y) {
@@ -271,7 +456,7 @@ struct TanhGrad {
     float* val_;
     float* dprev_;
 
-    __device__
+    CUDA_CALLABLE
     inline
     void operator()(size_t i) {
         float denom = coshf(2 * val_[i]) + 1;
@@ -282,49 +467,74 @@ struct TanhGrad {
     }
 };
 
-static void TanhBackprop(Var& val, Var* lhs, Var*) {
-    TanhGrad tg = {
-        .dlhs_ = lhs->derivative().data().Get(),
-        .val_ = val.value().data().Get(),
-        .dprev_ = val.derivative().data().Get()
-    };
-
-    cuda::RunKernel(tg, val.value().size());
-}
-
 Var Tanh(const Var& val) {
-    Matrix res(val.value().rows(), val.value().cols());
-    auto r = cuda::Array(res.data());
-    auto x = cuda::Array(val.value().data());
-    cuda::RunKernel(cuda::Seq(r = cuda::tanh(x)), res.size());
-    return val.graph()->CreateNode(std::move(res), val, no_operand, TanhBackprop);
-}
+    class TanhOperator : public Operator {
+        Var lhs_;
 
-static void ColAppendBackprop(Var& val, Var* lhs, Var* rhs) {
-    lhs->derivative() += val.derivative().block(0, 0, lhs->derivative().rows(), 1);
-    rhs->derivative() += val.derivative().block(
-            lhs->derivative().rows(), 0, rhs->derivative().rows(), 1);
+        public:
+            TanhOperator(Var lhs)
+                : Operator(
+                        lhs.graph(),
+                        Matrix(lhs.value().rows(), lhs.value().cols())),
+                lhs_(lhs) {
+                    auto r = cuda::Array(value().data());
+                    auto x = cuda::Array(lhs.value().data());
+                    cuda::RunKernel(cuda::Seq(r = cuda::tanh(x)),
+                            lhs.value().size());
+            }
+
+            virtual void Backward() override {
+                TanhGrad tg = {
+                    .dlhs_ = lhs_.derivative().data().Get(),
+                    .val_ = value().data().Get(),
+                    .dprev_ = derivative().data().Get()
+                };
+
+                cuda::RunKernel(tg, value().size());
+            }
+    };
+    return val.graph()->CreateNode(std::make_shared<TanhOperator>(val));
 }
 
 Var ColAppend(Var x, Var y) {
-    if (x.value().cols() != 1 || y.value().cols() != 1) {
-        throw std::runtime_error("cannot append not-a-column-vectors");
-    }
+    class ColAppendOperator : public Operator {
+        Var lhs_;
+        Var rhs_;
 
-    Matrix cated(x.value().rows() + y.value().rows(), 1);
-    cudaMemcpy(
-            cated.data().Get(),
-            x.value().data().Get(),
-            sizeof (float) * x.value().rows(),
-            cudaMemcpyDeviceToDevice);
-    cudaMemcpy(
-            cated.data().Get() + x.value().rows(),
-            y.value().data().Get(),
-            sizeof (float) * y.value().rows(),
-            cudaMemcpyDeviceToDevice);
-    return x.graph()->CreateNode(std::move(cated), x, y, ColAppendBackprop);
+        public:
+            ColAppendOperator(Var lhs, Var rhs)
+                : Operator(
+                        lhs.graph(),
+                        Matrix(lhs.value().rows() + rhs.value().rows(), 1)),
+                lhs_(lhs),
+                rhs_(rhs) {
+                    if (lhs.value().cols() != 1 || rhs.value().cols() != 1) {
+                        throw std::runtime_error(
+                                "cannot append not-a-column-vectors");
+                    }
+
+                    cudaMemcpy(
+                            value().data().Get(),
+                            lhs.value().data().Get(),
+                            sizeof (float) * lhs.value().rows(),
+                            cudaMemcpyDeviceToDevice);
+                    cudaMemcpy(
+                            value().data().Get() + lhs.value().rows(),
+                            rhs.value().data().Get(),
+                            sizeof (float) * rhs.value().rows(),
+                            cudaMemcpyDeviceToDevice);
+            }
+
+            virtual void Backward() override {
+                lhs_.derivative() += derivative().block(0, 0, lhs_.derivative().rows(), 1);
+                rhs_.derivative() += derivative().block(
+                        lhs_.derivative().rows(), 0, rhs_.derivative().rows(), 1);
+            }
+    };
+    return x.graph()->CreateNode(std::make_shared<ColAppendOperator>(x, y));
 }
 
+#if 0
 static void ColSplitBackprop(Var& val, Var* lhs, Var* params) {
     int from = params->value().CudaRead(0, 0);
     int len = params->value().CudaRead(1, 0);
@@ -354,4 +564,5 @@ Var ColSplit(Var x, int from, int len) {
             ColSplitBackprop);
 }
 
+#endif
 }

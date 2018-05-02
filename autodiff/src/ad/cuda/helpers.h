@@ -95,3 +95,4 @@ struct hash<cuda::Ptr<T>> {
 };
 
 } // std
+

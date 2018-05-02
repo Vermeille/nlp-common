@@ -19,29 +19,32 @@ ad::Var SequenceClassifierGraph::Step(
     for (auto& w : ws) {
         encoded = encoder_.Step(words_.MakeVarFor(g, w.idx));
     }
-    return ad::Softmax(decoder_.Compute(encoded));
+    return decoder_.Compute(encoded);
 }
 
 ad::Matrix& SequenceClassifier::ComputeClass(
         const std::vector<WordFeatures>& ws) const {
     ad::ComputationGraph g;
     SequenceClassifierGraph graph(g, *this, input_size_, output_size_);
-    return graph.Step(g, ws).value();
+    return ad::Softmax(graph.Step(g, ws)).value();
 }
 
 double SequenceClassifier::Train(const Document& doc) {
-    for (auto& ex : doc.examples) {
-        if (ex.inputs.empty()) {
-            continue;
-        }
+    ad::train::FeedForwardTrainer trainer(new ad::opt::Adagrad(1));
+    for (int i = 0; i < 10; ++i) {
+        for (auto& ex : doc.examples) {
+            if (ex.inputs.empty()) {
+                continue;
+            }
 
-        using namespace ad;
-        ad::train::FeedForwardTrainer trainer(new ad::opt::Adagrad(0.1));
+            using namespace ad;
 
-        trainer.Step(ex.inputs, ex.output,
-                [&](ad::ComputationGraph& g) {
+            trainer.Step(ex.inputs, ex.output,
+                    [&](ad::ComputationGraph& g) {
                     return SequenceClassifierGraph(g, *this, input_size_, output_size_);
-                });
+                    });
+        }
+        std::cout << Test(doc) << std::endl;
     }
 
     return Test(doc);

@@ -19,11 +19,10 @@ class FeedForwardTrainer {
             auto h = model.Step(g, input);
             Var J = model.Cost(g, h, out);
 
-            g.BackpropFrom(J, 5);
+            g.Backprop(5);
             g.Update(*updater_);
 
-            //return J.value().CudaRead(0, 0);
-            return 0;
+            return J.value().CudaRead(0, 0);
         }
 };
 
@@ -52,7 +51,7 @@ class WholeSequenceTaggerTrainer {
 
             Var J = model.Cost(g, predicted, expected);
 
-            g.BackpropFrom(J, 5);
+            g.Backprop(5);
             g.Update(*updater_);
 
             return J.value().CudaRead(0, 0);
@@ -87,7 +86,7 @@ class IterativeSequenceTaggerTrainer {
                 Var J = model.Cost(g, h, expected[last]);
 
                 nll += J.value().CudaRead(0, 0);
-                g.BackpropFrom(J, 5);
+                g.Backprop(5);
                 g.Update(*updater_);
             }
 

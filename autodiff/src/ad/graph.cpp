@@ -3,10 +3,6 @@
 
 namespace ad {
 
-const Var no_operand(
-        new VarImpl(nullptr, Matrix(1,1), -1, -1, -1, DoNothingBackprop, false));
-void DoNothingBackprop(Var&, Var*, Var*) {}
-
 size_t Param::next_id_;
 
 Param::Param(size_t rows, size_t cols, const MatrixInitialization& init)
@@ -16,10 +12,16 @@ Param::Param(size_t rows, size_t cols, const MatrixInitialization& init)
 }
 Var ComputationGraph::CreateParam(
         std::shared_ptr<Param> val, bool learnable) {
-    int p_id = values_.size();
+    struct LoadOperator : public Operator {
+        LoadOperator(
+                ComputationGraph* g,
+                const std::shared_ptr<Param>& p,
+                bool learnable)
+            : Operator(g, p, learnable) {}
 
-    values_.emplace_back(
-            new VarImpl(this, val, p_id, -1, -1, DoNothingBackprop, learnable));
+        virtual void Backward() override {}
+    };
+    values_.push_back(std::make_shared<LoadOperator>(this, val, learnable));
     return Var(values_.back().get());
 }
 
@@ -27,54 +29,25 @@ Var ComputationGraph::CreateParam(Matrix&& val) {
     return CreateParam(std::make_shared<Param>(std::move(val)));
 }
 
-Var ComputationGraph::CreateNode(
-        Matrix&& val,
-        const Var& lhs,
-        const Var& rhs,
-        backward_t bwd) {
-    int p_id = values_.size();
-
-    values_.emplace_back(
-            new VarImpl(
-                this, std::move(val), p_id, lhs.id(), rhs.id(), *bwd, false));
+Var ComputationGraph::CreateNode(std::shared_ptr<Operator> op) {
+    values_.push_back(op);
     return Var(values_.back().get());
 }
 
-void ComputationGraph::BackpropFrom(Var& x, double clip) {
-    int id = x.id();
-    values_[id]->InitBackprop();
-    for (int i = id; i >= 0; --i) {
-        Var cur(values_[i].get());
+void ComputationGraph::Backprop(double clip) {
+    values_.back()->InitBackprop();
+    for (int i = values_.size() - 1; i >= 0; --i) {
+        Operator& op = *values_[i];
         if (clip != 0) {
-            cur.derivative().Clip(clip);
+            op.derivative().Clip(clip);
         }
-        Var nullvar(nullptr);
-        if (cur.lhs() == -1) {
-            cur.Backward(nullptr, nullptr);
-        } else if (cur.rhs() == -1) {
-            Var a(values_[cur.lhs()].get());
-            cur.Backward(&a, nullptr);
-        } else {
-            Var a(values_[cur.lhs()].get());
-            Var b(values_[cur.rhs()].get());
-            cur.Backward(&a, &b);
-        }
+        op.Backward();
     }
 }
 
 void ComputationGraph::ClearGrad() {
     for (auto& v : values_) {
         v->ClearDerivative();
-    }
-}
-
-void ComputationGraph::ClearIntermediateGradientsFrom(Var x) {
-    int id = x.id();
-    for (int i = id; i >= 0; --i) {
-        Var cur(values_[i].get());
-        if (cur.lhs() != -1) {
-            cur.derivative().SetZero();
-        }
     }
 }
 

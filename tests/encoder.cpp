@@ -91,8 +91,7 @@ double Train(AutoEncoderFullParams& params, const Document& doc, const Dictionna
 
         if (nb % 40 == 0) {
             std::cout << "time: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start).count() << "ms\n";
-            start = std::chrono::system_clock::now();
-#if 0
+#if 1
             std::cout << "(" << loss << ")\n";
             loss = 0;
 
@@ -108,6 +107,7 @@ double Train(AutoEncoderFullParams& params, const Document& doc, const Dictionna
             }
             std::cout << "\n";
 #endif
+            start = std::chrono::system_clock::now();
         }
     }
     ++nb_whole;

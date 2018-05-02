@@ -61,6 +61,6 @@ class SequenceClassifierGraph {
         ad::Var Cost(ad::ComputationGraph& g, ad::Var h, int k) {
             ad::Var y = g.CreateParam(
                     ad::utils::OneHotColumnVector(k, output_size_));
-            return ad::MSE(h, y);
+            return ad::Sum(ad::SoftmaxLoss(h, y));
         }
 };

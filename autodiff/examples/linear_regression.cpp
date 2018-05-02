@@ -37,7 +37,7 @@ int main() {
         auto output = fc.Compute(x);
         Var j = MSE(output, y) + 0.001 * nn::L2(g.GetAllLearnableVars());
 
-        g.BackpropFrom(j);
+        g.Backprop();
         g.Update(adagrad);
         std::cout << "COST = " << j.value().CudaRead(0, 0) << "\n";
     }
